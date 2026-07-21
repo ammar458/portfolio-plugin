@@ -75,18 +75,32 @@ function initGLightbox() {
         videosWidth: '960px'
     });
 
-    // Run on every slide change (and on open)
-    function onSlideReady(data) {
-        var slide = data.slide || data.slideNode;
-        if (!slide) return;
-        if (!slide.classList.contains('gslide-video')) return;
-
-        // Read the href straight off this slide's own rendered iframe -
-        // GLightbox sets its src to exactly the URL we gave it, so this is
-        // tied unambiguously to the slide actually being shown.
+    // GLightbox inserts the video iframe asynchronously (it defers slide
+    // setup behind an internal script-load check, even when nothing actually
+    // needs loading), so it may not exist yet when slide_after_load fires.
+    // Applying the ratio from an href we read too early would silently and
+    // permanently default to 16:9. Handle it whenever the iframe actually
+    // shows up instead of assuming it's already there.
+    function applyRatioFromSlide(slide) {
         var iframe = slide.querySelector('iframe');
-        var href = iframe ? (iframe.src || '') : '';
+        if (iframe) {
+            useHref(slide, iframe.src || '');
+            return;
+        }
+        var observer = new MutationObserver(function () {
+            var found = slide.querySelector('iframe');
+            if (found) {
+                observer.disconnect();
+                useHref(slide, found.src || '');
+            }
+        });
+        observer.observe(slide, { childList: true, subtree: true });
+        // Safety net: stop watching even if no iframe ever appears (e.g. an
+        // image slide misclassified, or the slide gets closed/destroyed).
+        setTimeout(function () { observer.disconnect(); }, 8000);
+    }
 
+    function useHref(slide, href) {
         var ratio = detectVideoRatio(href);
         applyVideoRatio(slide, ratio);
 
@@ -95,6 +109,15 @@ function initGLightbox() {
         if (/[?&]gvguess=1/.test(href) && /vimeo\.com/i.test(href)) {
             fetchVimeoRatioClientSide(href, slide);
         }
+    }
+
+    // Run on every slide change (and on open)
+    function onSlideReady(data) {
+        var slide = data.slide || data.slideNode;
+        if (!slide) return;
+        if (!slide.classList.contains('gslide-video')) return;
+
+        applyRatioFromSlide(slide);
     }
 
     lightbox.on('slide_after_load', onSlideReady);
