@@ -116,6 +116,26 @@ function shortcode_portfolio_galeria() {
     // IDs to show first (in the given order)
     $priority_ids = [33248, 32544, 32686, 32581, 32644, 51116];
 
+    // Categories marked "Hide from filter bar" (ocultar_categoria) are
+    // pulled from the grid entirely too, not just their filter button - lets
+    // a whole category be taken offline with one checkbox (e.g. while a
+    // display bug is being fixed and tested) instead of a separate toggle.
+    $hidden_term_ids = [];
+    foreach (get_terms(['taxonomy' => 'tipo_portafolio', 'hide_empty' => false]) as $term) {
+        if (get_field('ocultar_categoria', $term)) {
+            $hidden_term_ids[] = $term->term_id;
+        }
+    }
+    $tax_query = [];
+    if ($hidden_term_ids) {
+        $tax_query[] = [
+            'taxonomy' => 'tipo_portafolio',
+            'field'    => 'term_id',
+            'terms'    => $hidden_term_ids,
+            'operator' => 'NOT IN',
+        ];
+    }
+
     // ---------- RENDER FUNCTION ----------
     $render_item = function ($post_id) {
 
@@ -267,6 +287,7 @@ function shortcode_portfolio_galeria() {
         'orderby'        => 'post__in',
         'posts_per_page' => -1,
         'post_status'    => 'publish',
+        'tax_query'      => $tax_query,
     ]);
 
     $shown_ids = [];
@@ -286,6 +307,7 @@ function shortcode_portfolio_galeria() {
         'orderby'        => 'ASC',
         'post_status'    => 'publish',
         'post__not_in'   => $shown_ids,
+        'tax_query'      => $tax_query,
     ]);
 
     if ($rest_query->have_posts()) {
