@@ -61,8 +61,14 @@ add_shortcode('portfolio_filtros', 'shortcode_portfolio_filtros');
 function portfolio_get_vimeo_ratio($post_id, $vimeo_page_url) {
     $cache_key = '_video_ratio_' . md5($vimeo_page_url);
     $cached    = get_post_meta($post_id, $cache_key, true);
-    if ($cached) {
+    if ($cached && $cached !== 'none') {
         return $cached;
+    }
+    if ($cached === 'none') {
+        // Stale permanent-failure marker from an older version (pre-v1.10)
+        // that cached failed lookups forever instead of retrying - clear it
+        // so this video gets a fresh attempt instead of being stuck.
+        delete_post_meta($post_id, $cache_key);
     }
 
     // Short-lived failure cache: retries automatically on the next page
