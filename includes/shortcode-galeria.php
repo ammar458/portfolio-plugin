@@ -124,6 +124,7 @@ function shortcode_portfolio_galeria() {
         // Normalize YouTube URLs (including Shorts)
         $video_url = '';
         $is_vertical = false;
+        $is_vimeo    = false;
         if ($raw_url) {
             // YouTube Shorts: youtube.com/shorts/VIDEO_ID
             if (preg_match('#youtube\.com/shorts/([a-zA-Z0-9_-]+)#', $raw_url, $m)) {
@@ -143,6 +144,7 @@ function shortcode_portfolio_galeria() {
             // Vimeo Showcase (album): vimeo.com/showcase/ID
             } elseif (preg_match('#vimeo\.com/showcase/(\d+)#', $raw_url, $m)) {
                 $video_url = 'https://vimeo.com/showcase/' . $m[1] . '/embed';
+                $is_vimeo  = true;
                 parse_str((string) parse_url($raw_url, PHP_URL_QUERY), $vparams);
                 if (!empty($vparams['h'])) {
                     $video_url .= '?h=' . $vparams['h'];
@@ -153,6 +155,7 @@ function shortcode_portfolio_galeria() {
             // Vimeo: vimeo.com/ID, vimeo.com/ID/HASH (private share link), or vimeo.com/video/ID
             } elseif (preg_match('#vimeo\.com/(?:video/)?(\d+)(?:/([0-9a-zA-Z]+))?#', $raw_url, $m)) {
                 $vimeo_hash = $m[2] ?? '';
+                $is_vimeo   = true;
                 if (!$vimeo_hash) {
                     parse_str((string) parse_url($raw_url, PHP_URL_QUERY), $vparams);
                     $vimeo_hash = $vparams['h'] ?? '';
@@ -184,12 +187,19 @@ function shortcode_portfolio_galeria() {
 
         // Tag the video's real aspect ratio so JS can size the lightbox to
         // fit it exactly, rather than snapping to a fixed landscape/short bucket.
+        // Vimeo intentionally gets NO fallback here: if the real ratio couldn't
+        // be detected (iframe paste or oEmbed), we'd rather show that plainly
+        // than silently mask it behind a guessed 16:9 box.
         $glightbox_extra = '';
         if ($data_type === 'video') {
-            if (!$video_ratio) {
+            if (!$video_ratio && !$is_vimeo) {
                 $video_ratio = $is_vertical ? '9/16' : '16/9';
             }
-            $glightbox_extra = 'data-video-ratio="' . esc_attr($video_ratio) . '"';
+            if ($video_ratio) {
+                $glightbox_extra = 'data-video-ratio="' . esc_attr($video_ratio) . '"';
+            } elseif ($is_vimeo) {
+                $glightbox_extra = 'data-video-noratio="1"';
+            }
         }
 
         ob_start(); ?>

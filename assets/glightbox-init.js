@@ -8,6 +8,10 @@ function detectVideoRatio(href, triggerEl) {
     if (triggerEl) {
         var ratio = triggerEl.getAttribute('data-video-ratio');
         if (ratio) return ratio;
+
+        // Vimeo explicitly opts out of a guessed fallback (see PHP) - return
+        // null so no ratio is forced and the real detection gap is visible.
+        if (triggerEl.getAttribute('data-video-noratio') === '1') return null;
     }
 
     if (!href) return '16/9';
@@ -22,9 +26,17 @@ function detectVideoRatio(href, triggerEl) {
 /**
  * Stamp the active slide with a CSS custom property holding its aspect
  * ratio; CSS reads --gvideo-ratio to size the box to fit exactly.
+ * A null ratio (Vimeo detection failure, no fallback) clears the property
+ * and flags the slide so CSS drops its sizing overrides entirely.
  */
 function applyVideoRatio(slide, ratio) {
     if (!slide) return;
+    if (!ratio) {
+        slide.style.removeProperty('--gvideo-ratio');
+        slide.classList.add('gvideo-no-ratio');
+        return;
+    }
+    slide.classList.remove('gvideo-no-ratio');
     slide.style.setProperty('--gvideo-ratio', ratio);
 }
 
