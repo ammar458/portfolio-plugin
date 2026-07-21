@@ -14,6 +14,15 @@ function shortcode_portfolio_filtros() {
         'hide_empty' => false,
     ]);
 
+    // Skip categories marked "Hide from filter bar" (ACF true/false field
+    // "ocultar_categoria" on the tipo_portafolio taxonomy). Checking for
+    // "hidden" rather than "enabled" means existing categories with no value
+    // set yet default to shown - no migration needed for categories created
+    // before this field existed.
+    $terms = array_values(array_filter($terms, function ($term) {
+        return !get_field('ocultar_categoria', $term);
+    }));
+
     usort($terms, function ($a, $b) {
         $order_a = get_field('orden_menu', $a);
         $order_b = get_field('orden_menu', $b);
