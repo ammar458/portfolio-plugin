@@ -1,44 +1,31 @@
 /**
- * Detect video format from a URL and return a format key:
- *   'short'     - YouTube Shorts (9:16 vertical)
- *   'landscape' - Standard widescreen YouTube / Vimeo (16:9)
- *   'square'    - Instagram-style square (1:1)  — fallback for unknown
+ * Detect a video's real aspect ratio (as a CSS ratio string like "16/9")
+ * so the lightbox can size itself to the exact video instead of a fixed bucket.
  */
-function detectVideoFormat(href, triggerEl) {
-    // Trust the PHP-stamped attribute first (already detected server-side)
+function detectVideoRatio(href, triggerEl) {
+    // Trust the PHP-stamped attribute first (exact ratio detected server-side,
+    // e.g. from a pasted iframe's width/height)
     if (triggerEl) {
-        var fmt = triggerEl.getAttribute('data-video-format');
-        if (fmt) return fmt;
+        var ratio = triggerEl.getAttribute('data-video-ratio');
+        if (ratio) return ratio;
     }
 
-    if (!href) return 'landscape';
+    if (!href) return '16/9';
 
     // YouTube Shorts
-    if (/youtube\.com\/shorts\//i.test(href)) return 'short';
-    if (/youtube\.com\/embed\//i.test(href) && /shorts/i.test(href)) return 'short';
+    if (/youtube\.com\/shorts\//i.test(href)) return '9/16';
+    if (/youtube\.com\/embed\//i.test(href) && /shorts/i.test(href)) return '9/16';
 
-    // Vimeo — default landscape (no reliable short-form detection without API)
-    if (/vimeo\.com/i.test(href)) return 'landscape';
-
-    // Standard YouTube
-    if (/youtube\.com|youtu\.be/i.test(href)) return 'landscape';
-
-    // Local video files — assume landscape
-    if (/\.(mp4|webm|ogg|mov)(\?|$)/i.test(href)) return 'landscape';
-
-    return 'landscape';
+    return '16/9';
 }
 
 /**
- * Apply a CSS class to the active slide based on video format.
- * Removes any previously applied format class first.
+ * Stamp the active slide with a CSS custom property holding its aspect
+ * ratio; CSS reads --gvideo-ratio to size the box to fit exactly.
  */
-var FORMAT_CLASSES = ['gvideo-format-short', 'gvideo-format-landscape', 'gvideo-format-square'];
-
-function applyVideoFormatClass(slide, format) {
+function applyVideoRatio(slide, ratio) {
     if (!slide) return;
-    FORMAT_CLASSES.forEach(function(cls) { slide.classList.remove(cls); });
-    slide.classList.add('gvideo-format-' + format);
+    slide.style.setProperty('--gvideo-ratio', ratio);
 }
 
 function initGLightbox() {
@@ -60,7 +47,7 @@ function initGLightbox() {
         if (!slide) return;
         if (!slide.classList.contains('gslide-video')) return;
 
-        // Find the trigger element that opened this slide to read data-video-format
+        // Find the trigger element that opened this slide to read data-video-ratio
         var index = data.index != null ? data.index : (data.slideIndex != null ? data.slideIndex : null);
         var triggerEl = null;
         if (index !== null) {
@@ -76,8 +63,8 @@ function initGLightbox() {
             if (iframe) href = iframe.src || '';
         }
 
-        var format = detectVideoFormat(href, triggerEl);
-        applyVideoFormatClass(slide, format);
+        var ratio = detectVideoRatio(href, triggerEl);
+        applyVideoRatio(slide, ratio);
     }
 
     lightbox.on('slide_after_load', onSlideReady);

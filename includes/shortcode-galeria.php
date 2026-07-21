@@ -74,11 +74,12 @@ function shortcode_portfolio_galeria() {
 
         // Allow pasting a full <iframe> embed snippet (e.g. Vimeo/YouTube's
         // "Share > Embed" code) instead of a bare URL - pull the src out of it,
-        // and use its width/height to detect portrait (vertical) video.
-        $iframe_vertical = false;
+        // and keep its exact width/height so the lightbox can preserve the
+        // video's real aspect ratio instead of guessing a bucketed format.
+        $video_ratio = ''; // e.g. "1080/1920" - exact ratio from a pasted iframe
         if ($raw_url && stripos($raw_url, '<iframe') !== false) {
             if (preg_match('#width=["\'](\d+)["\']#i', $raw_url, $w) && preg_match('#height=["\'](\d+)["\']#i', $raw_url, $h)) {
-                $iframe_vertical = ((int) $h[1]) > ((int) $w[1]);
+                $video_ratio = $w[1] . '/' . $h[1];
             }
             if (preg_match('#src=["\']([^"\']+)["\']#i', $raw_url, $ifr)) {
                 $raw_url = html_entity_decode($ifr[1]);
@@ -87,7 +88,7 @@ function shortcode_portfolio_galeria() {
 
         // Normalize YouTube URLs (including Shorts)
         $video_url = '';
-        $is_vertical = $iframe_vertical;
+        $is_vertical = false;
         if ($raw_url) {
             // YouTube Shorts: youtube.com/shorts/VIDEO_ID
             if (preg_match('#youtube\.com/shorts/([a-zA-Z0-9_-]+)#', $raw_url, $m)) {
@@ -138,12 +139,14 @@ function shortcode_portfolio_galeria() {
 
         if (!$img_main || !$href) return '';
 
-        // Tag video format so JS can auto-size the lightbox at runtime.
-        // No hardcoded pixel dimensions - JS reads data-video-format and applies the right CSS class.
+        // Tag the video's real aspect ratio so JS can size the lightbox to
+        // fit it exactly, rather than snapping to a fixed landscape/short bucket.
         $glightbox_extra = '';
         if ($data_type === 'video') {
-            $video_format    = $is_vertical ? 'short' : 'landscape';
-            $glightbox_extra = 'data-video-format="' . $video_format . '"';
+            if (!$video_ratio) {
+                $video_ratio = $is_vertical ? '9/16' : '16/9';
+            }
+            $glightbox_extra = 'data-video-ratio="' . esc_attr($video_ratio) . '"';
         }
 
         ob_start(); ?>

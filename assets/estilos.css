@@ -291,68 +291,31 @@ body.glightbox-open {
     border: none;
     background: #000;
     width: 100% !important;
-}
-
-
-/* ---- FORMAT: landscape (16:9) — standard YouTube / Vimeo ---- */
-
-.gslide-video.gvideo-format-landscape .ginner-container,
-.gslide-video.gvideo-format-landscape .gslide-media,
-.gslide-video.gvideo-format-landscape .gvideo-wrapper {
-    width: 90vw !important;
-    max-width: 960px !important;
-    height: auto !important;
-}
-
-.gslide-video.gvideo-format-landscape .plyr__video-embed,
-.gslide-video.gvideo-format-landscape .plyr {
-    aspect-ratio: 16 / 9;
-    height: auto !important;
-}
-
-
-/* ---- FORMAT: short (9:16) — YouTube Shorts ---- */
-
-.gslide-video.gvideo-format-short .ginner-container,
-.gslide-video.gvideo-format-short .gslide-media,
-.gslide-video.gvideo-format-short .gvideo-wrapper {
-    width: auto !important;
-    max-width: 360px !important;
-    height: 80vh !important;
-    max-height: 640px !important;
-}
-
-.gslide-video.gvideo-format-short .plyr__video-embed,
-.gslide-video.gvideo-format-short .plyr {
-    aspect-ratio: 9 / 16;
-    height: 100% !important;
-    width: auto !important;
-    max-width: 360px !important;
-}
-
-.gslide-video.gvideo-format-short .gvideo-wrapper iframe,
-.gslide-video.gvideo-format-short .plyr__video-embed iframe {
-    width: 100% !important;
     height: 100% !important;
     min-width: unset !important;
 }
 
 
-/* ---- FORMAT: square (1:1) — fallback ---- */
+/* ---- Video sizing: fits the box to each video's real aspect ratio ----
+   --gvideo-ratio is stamped per-slide by glightbox-init.js (from the
+   PHP-detected data-video-ratio attribute). width = min(90vw, 90vh * ratio)
+   is the standard CSS "contain" formula: it picks whichever of the two
+   viewport limits is tighter, then aspect-ratio derives the matching height,
+   so ANY ratio (portrait, landscape, square) fits without a fixed bucket. */
 
-.gslide-video.gvideo-format-square .ginner-container,
-.gslide-video.gvideo-format-square .gslide-media,
-.gslide-video.gvideo-format-square .gvideo-wrapper {
-    width: 70vh !important;
-    max-width: 640px !important;
-    height: 70vh !important;
-    max-height: 640px !important;
+.gslide-video .ginner-container,
+.gslide-video .gslide-media,
+.gslide-video .gvideo-wrapper {
+    width: min(90vw, calc(90vh * var(--gvideo-ratio, 16 / 9))) !important;
+    max-width: 1280px !important;
+    height: auto !important;
 }
 
-.gslide-video.gvideo-format-square .plyr__video-embed,
-.gslide-video.gvideo-format-square .plyr {
-    aspect-ratio: 1 / 1;
-    height: 100% !important;
+.gslide-video .plyr__video-embed,
+.gslide-video .plyr {
+    aspect-ratio: var(--gvideo-ratio, 16 / 9);
+    width: 100% !important;
+    height: auto !important;
 }
 
 /* ============================================================
