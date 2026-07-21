@@ -72,7 +72,14 @@ function initGLightbox() {
         loop: true,
         zoomable: true,
         arrows: true,
-        videosWidth: '960px'
+        videosWidth: '960px',
+        // GLightbox auto-loads Plyr by default and hands Vimeo videos off to
+        // its Vimeo provider, which rebuilds the iframe src from scratch
+        // (extracting only the numeric video ID) - silently dropping our
+        // gvratio marker and any privacy hash. We don't use Plyr's custom
+        // skin, so disable it and use GLightbox's plain iframe embed, which
+        // uses our href exactly as given.
+        plyr: { enabled: false }
     });
 
     // GLightbox inserts the video iframe asynchronously (it defers slide
