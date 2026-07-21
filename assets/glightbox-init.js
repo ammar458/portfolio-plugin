@@ -28,6 +28,41 @@ function applyVideoRatio(slide, ratio) {
     slide.style.setProperty('--gvideo-ratio', ratio);
 }
 
+/**
+ * Client-side fallback for when the server couldn't confirm a Vimeo video's
+ * real ratio (e.g. its outbound oEmbed request got blocked on that host).
+ * The visitor's own browser calls Vimeo's oEmbed API directly - it isn't
+ * subject to the server's network restrictions - and corrects the guessed
+ * ratio once the real one comes back. Cached in-memory per page view so
+ * reopening the same slide doesn't refetch.
+ */
+var _vimeoRatioCache = {};
+
+function fetchVimeoRatioClientSide(href, slide) {
+    var idMatch = href.match(/vimeo\.com\/(?:video\/)?(\d+)/i);
+    if (!idMatch) return;
+
+    var pageUrl = 'https://vimeo.com/' + idMatch[1];
+    var hashMatch = href.match(/[?&]h=([0-9a-zA-Z]+)/);
+    if (hashMatch) pageUrl += '/' + hashMatch[1];
+
+    if (_vimeoRatioCache[pageUrl]) {
+        applyVideoRatio(slide, _vimeoRatioCache[pageUrl]);
+        return;
+    }
+
+    fetch('https://vimeo.com/api/oembed.json?url=' + encodeURIComponent(pageUrl))
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (data) {
+            if (data && data.width && data.height) {
+                var ratio = data.width + '/' + data.height;
+                _vimeoRatioCache[pageUrl] = ratio;
+                applyVideoRatio(slide, ratio);
+            }
+        })
+        .catch(function () { /* server's guessed fallback stays in place */ });
+}
+
 function initGLightbox() {
     if (typeof GLightbox !== 'function') return;
 
@@ -65,6 +100,12 @@ function initGLightbox() {
 
         var ratio = detectVideoRatio(href, triggerEl);
         applyVideoRatio(slide, ratio);
+
+        // Server only had a guessed ratio for this Vimeo video - try to get
+        // the real one from the browser instead.
+        if (triggerEl && triggerEl.getAttribute('data-video-ratio-guess') === '1' && /vimeo\.com/i.test(href)) {
+            fetchVimeoRatioClientSide(href, slide);
+        }
     }
 
     lightbox.on('slide_after_load', onSlideReady);

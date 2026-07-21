@@ -197,10 +197,17 @@ function shortcode_portfolio_galeria() {
         // oEmbed lookup never leaves the video cropped/unstyled.
         $glightbox_extra = '';
         if ($data_type === 'video') {
+            $ratio_is_guess = !$video_ratio;
             if (!$video_ratio) {
                 $video_ratio = $is_vertical ? '9/16' : '16/9';
             }
             $glightbox_extra = 'data-video-ratio="' . esc_attr($video_ratio) . '"';
+            if ($ratio_is_guess) {
+                // Server couldn't confirm the real ratio (e.g. oEmbed request
+                // blocked on this host) - let the browser try instead, since
+                // it isn't subject to the server's outbound request limits.
+                $glightbox_extra .= ' data-video-ratio-guess="1"';
+            }
         }
 
         ob_start(); ?>
