@@ -69,8 +69,13 @@ function shortcode_portfolio_galeria() {
         $raw_url      = trim((string) get_field('video_url', $post_id));
 
         // Allow pasting a full <iframe> embed snippet (e.g. Vimeo/YouTube's
-        // "Share > Embed" code) instead of a bare URL - pull the src out of it.
+        // "Share > Embed" code) instead of a bare URL - pull the src out of it,
+        // and use its width/height to detect portrait (vertical) video.
+        $iframe_vertical = false;
         if ($raw_url && stripos($raw_url, '<iframe') !== false) {
+            if (preg_match('#width=["\'](\d+)["\']#i', $raw_url, $w) && preg_match('#height=["\'](\d+)["\']#i', $raw_url, $h)) {
+                $iframe_vertical = ((int) $h[1]) > ((int) $w[1]);
+            }
             if (preg_match('#src=["\']([^"\']+)["\']#i', $raw_url, $ifr)) {
                 $raw_url = html_entity_decode($ifr[1]);
             }
@@ -78,12 +83,12 @@ function shortcode_portfolio_galeria() {
 
         // Normalize YouTube URLs (including Shorts)
         $video_url = '';
-        $is_short  = false;
+        $is_vertical = $iframe_vertical;
         if ($raw_url) {
             // YouTube Shorts: youtube.com/shorts/VIDEO_ID
             if (preg_match('#youtube\.com/shorts/([a-zA-Z0-9_-]+)#', $raw_url, $m)) {
                 $video_url = 'https://www.youtube.com/embed/' . $m[1];
-                $is_short  = true;
+                $is_vertical = true;
             // youtu.be/VIDEO_ID (short link, may also be a Short)
             } elseif (strpos($raw_url, 'youtu.be/') !== false) {
                 $path      = ltrim(parse_url($raw_url, PHP_URL_PATH), '/');
@@ -133,7 +138,7 @@ function shortcode_portfolio_galeria() {
         // No hardcoded pixel dimensions - JS reads data-video-format and applies the right CSS class.
         $glightbox_extra = '';
         if ($data_type === 'video') {
-            $video_format    = $is_short ? 'short' : 'landscape';
+            $video_format    = $is_vertical ? 'short' : 'landscape';
             $glightbox_extra = 'data-video-format="' . $video_format . '"';
         }
 

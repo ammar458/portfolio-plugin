@@ -2,7 +2,7 @@
 /*
 Plugin Name: Custom Portfolio
 Description: Plugin to manage and display a portfolio with filters and lightbox.
-Version: 1.3
+Version: 1.4
 Author: Ricardo Frassati
 GitHub Plugin URI: ammar458/portfolio-plugin
 */
