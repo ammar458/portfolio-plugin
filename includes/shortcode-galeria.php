@@ -87,6 +87,17 @@ function shortcode_portfolio_galeria() {
                 if (!empty($params['v'])) {
                     $video_url = 'https://www.youtube.com/embed/' . $params['v'];
                 }
+            // Vimeo: vimeo.com/ID, vimeo.com/ID/HASH (private share link), or vimeo.com/video/ID
+            } elseif (preg_match('#vimeo\.com/(?:video/)?(\d+)(?:/([0-9a-zA-Z]+))?#', $raw_url, $m)) {
+                $vimeo_hash = $m[2] ?? '';
+                if (!$vimeo_hash) {
+                    parse_str((string) parse_url($raw_url, PHP_URL_QUERY), $vparams);
+                    $vimeo_hash = $vparams['h'] ?? '';
+                }
+                $video_url = 'https://player.vimeo.com/video/' . $m[1];
+                if ($vimeo_hash) {
+                    $video_url .= '?h=' . $vimeo_hash;
+                }
             } else {
                 $video_url = $raw_url;
             }
