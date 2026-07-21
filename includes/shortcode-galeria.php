@@ -52,6 +52,41 @@ function shortcode_portfolio_filtros() {
 add_shortcode('portfolio_filtros', 'shortcode_portfolio_filtros');
 
 
+/**
+ * Look up a Vimeo video's real width/height via its oEmbed endpoint, so a
+ * bare vimeo.com URL (no pasted iframe) still gets sized to its true aspect
+ * ratio instead of defaulting to landscape. Cached in post meta - only ever
+ * hits the network once per video.
+ */
+function portfolio_get_vimeo_ratio($post_id, $vimeo_page_url) {
+    $cache_key = '_video_ratio_' . md5($vimeo_page_url);
+    $cached    = get_post_meta($post_id, $cache_key, true);
+    if ($cached) {
+        return $cached === 'none' ? '' : $cached;
+    }
+
+    $response = wp_remote_get(
+        'https://vimeo.com/api/oembed.json?url=' . urlencode($vimeo_page_url),
+        ['timeout' => 5]
+    );
+
+    if (is_wp_error($response) || 200 !== wp_remote_retrieve_response_code($response)) {
+        update_post_meta($post_id, $cache_key, 'none');
+        return '';
+    }
+
+    $data = json_decode(wp_remote_retrieve_body($response), true);
+    if (empty($data['width']) || empty($data['height'])) {
+        update_post_meta($post_id, $cache_key, 'none');
+        return '';
+    }
+
+    $ratio = $data['width'] . '/' . $data['height'];
+    update_post_meta($post_id, $cache_key, $ratio);
+    return $ratio;
+}
+
+
 // Shortcode: [portfolio_galeria]
 function shortcode_portfolio_galeria() {
 
@@ -112,6 +147,9 @@ function shortcode_portfolio_galeria() {
                 if (!empty($vparams['h'])) {
                     $video_url .= '?h=' . $vparams['h'];
                 }
+                if (!$video_ratio) {
+                    $video_ratio = portfolio_get_vimeo_ratio($post_id, $raw_url);
+                }
             // Vimeo: vimeo.com/ID, vimeo.com/ID/HASH (private share link), or vimeo.com/video/ID
             } elseif (preg_match('#vimeo\.com/(?:video/)?(\d+)(?:/([0-9a-zA-Z]+))?#', $raw_url, $m)) {
                 $vimeo_hash = $m[2] ?? '';
@@ -122,6 +160,11 @@ function shortcode_portfolio_galeria() {
                 $video_url = 'https://player.vimeo.com/video/' . $m[1];
                 if ($vimeo_hash) {
                     $video_url .= '?h=' . $vimeo_hash;
+                }
+                // No pasted iframe dimensions - ask Vimeo's oEmbed API for the
+                // video's real width/height so orientation is detected correctly.
+                if (!$video_ratio) {
+                    $video_ratio = portfolio_get_vimeo_ratio($post_id, $raw_url);
                 }
             } else {
                 $video_url = $raw_url;
