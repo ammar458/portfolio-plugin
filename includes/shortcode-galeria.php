@@ -95,6 +95,13 @@ function shortcode_portfolio_galeria() {
                 if (!empty($params['v'])) {
                     $video_url = 'https://www.youtube.com/embed/' . $params['v'];
                 }
+            // Vimeo Showcase (album): vimeo.com/showcase/ID
+            } elseif (preg_match('#vimeo\.com/showcase/(\d+)#', $raw_url, $m)) {
+                $video_url = 'https://vimeo.com/showcase/' . $m[1] . '/embed';
+                parse_str((string) parse_url($raw_url, PHP_URL_QUERY), $vparams);
+                if (!empty($vparams['h'])) {
+                    $video_url .= '?h=' . $vparams['h'];
+                }
             // Vimeo: vimeo.com/ID, vimeo.com/ID/HASH (private share link), or vimeo.com/video/ID
             } elseif (preg_match('#vimeo\.com/(?:video/)?(\d+)(?:/([0-9a-zA-Z]+))?#', $raw_url, $m)) {
                 $vimeo_hash = $m[2] ?? '';
