@@ -66,7 +66,11 @@ function shortcode_portfolio_galeria() {
         $img_main     = get_the_post_thumbnail_url($post_id, 'large');
         $type         = strtolower((string) get_field('tipo_de_contenido', $post_id));
         $img_sec      = get_field('imagen_secundaria', $post_id);
-        $raw_url      = trim((string) get_field('video_url', $post_id));
+        // Editors can fill in either field - Embed Code takes priority if both are set.
+        $raw_url = trim((string) get_field('video_embed_code', $post_id));
+        if (!$raw_url) {
+            $raw_url = trim((string) get_field('video_url', $post_id));
+        }
 
         // Allow pasting a full <iframe> embed snippet (e.g. Vimeo/YouTube's
         // "Share > Embed" code) instead of a bare URL - pull the src out of it,
