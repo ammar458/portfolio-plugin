@@ -1,18 +1,17 @@
 /**
- * Detect a video's real aspect ratio (as a CSS ratio string like "16/9")
- * so the lightbox can size itself to the exact video instead of a fixed bucket.
+ * Detect a video's real aspect ratio (as a CSS ratio string like "16/9") from
+ * its URL. PHP encodes the server-detected ratio directly into the video URL
+ * as a gvratio query param (ignored by the player) - read straight off the
+ * rendered slide's own iframe src, this is unambiguous and needs no lookup
+ * back to a trigger element.
  */
-function detectVideoRatio(href, triggerEl) {
-    // Trust the PHP-stamped attribute first (exact ratio detected server-side,
-    // e.g. from a pasted iframe's width/height)
-    if (triggerEl) {
-        var ratio = triggerEl.getAttribute('data-video-ratio');
-        if (ratio) return ratio;
-    }
-
+function detectVideoRatio(href) {
     if (!href) return '16/9';
 
-    // YouTube Shorts
+    var ratioMatch = href.match(/[?&]gvratio=([^&]+)/);
+    if (ratioMatch) return decodeURIComponent(ratioMatch[1]);
+
+    // Fallback heuristics only apply to hrefs without a gvratio param
     if (/youtube\.com\/shorts\//i.test(href)) return '9/16';
     if (/youtube\.com\/embed\//i.test(href) && /shorts/i.test(href)) return '9/16';
 
@@ -82,28 +81,18 @@ function initGLightbox() {
         if (!slide) return;
         if (!slide.classList.contains('gslide-video')) return;
 
-        // Find the trigger element that opened this slide to read data-video-ratio
-        var index = data.index != null ? data.index : (data.slideIndex != null ? data.slideIndex : null);
-        var triggerEl = null;
-        if (index !== null) {
-            var els = document.querySelectorAll('.glightbox');
-            if (els[index]) triggerEl = els[index];
-        }
+        // Read the href straight off this slide's own rendered iframe -
+        // GLightbox sets its src to exactly the URL we gave it, so this is
+        // tied unambiguously to the slide actually being shown.
+        var iframe = slide.querySelector('iframe');
+        var href = iframe ? (iframe.src || '') : '';
 
-        // Get href from the trigger or from the video iframe src already in the DOM
-        var href = '';
-        if (triggerEl) href = triggerEl.getAttribute('href') || '';
-        if (!href) {
-            var iframe = slide.querySelector('iframe');
-            if (iframe) href = iframe.src || '';
-        }
-
-        var ratio = detectVideoRatio(href, triggerEl);
+        var ratio = detectVideoRatio(href);
         applyVideoRatio(slide, ratio);
 
         // Server only had a guessed ratio for this Vimeo video - try to get
         // the real one from the browser instead.
-        if (triggerEl && triggerEl.getAttribute('data-video-ratio-guess') === '1' && /vimeo\.com/i.test(href)) {
+        if (/[?&]gvguess=1/.test(href) && /vimeo\.com/i.test(href)) {
             fetchVimeoRatioClientSide(href, slide);
         }
     }

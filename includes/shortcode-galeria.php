@@ -196,23 +196,31 @@ function shortcode_portfolio_galeria() {
 
         if (!$img_main || !$href) return '';
 
-        // Tag the video's real aspect ratio so JS can size the lightbox to
-        // fit it exactly, rather than snapping to a fixed landscape/short bucket.
+        // Tag the video's real aspect ratio so JS can size the lightbox to fit
+        // it exactly, rather than snapping to a fixed landscape/short bucket.
         // Falls back to a plausible default (16:9, or 9:16 for detected
         // verticals) whenever the real ratio can't be detected, so a failed
         // oEmbed lookup never leaves the video cropped/unstyled.
-        $glightbox_extra = '';
+        //
+        // Encoded directly into the video URL (query params, ignored by the
+        // player) rather than a data-* attribute on the trigger element:
+        // GLightbox sets the rendered iframe's src to this exact URL, so JS
+        // can read the ratio straight off the actual slide being shown. A
+        // data-attribute lookup would need to re-match the trigger element by
+        // slide index, which breaks as soon as Isotope filtering reorders
+        // the grid out from under GLightbox's original element order.
         if ($data_type === 'video') {
             $ratio_is_guess = !$video_ratio;
             if (!$video_ratio) {
                 $video_ratio = $is_vertical ? '9/16' : '16/9';
             }
-            $glightbox_extra = 'data-video-ratio="' . esc_attr($video_ratio) . '"';
+            $sep  = (strpos($href, '?') !== false) ? '&' : '?';
+            $href .= $sep . 'gvratio=' . rawurlencode($video_ratio);
             if ($ratio_is_guess) {
                 // Server couldn't confirm the real ratio (e.g. oEmbed request
                 // blocked on this host) - let the browser try instead, since
                 // it isn't subject to the server's outbound request limits.
-                $glightbox_extra .= ' data-video-ratio-guess="1"';
+                $href .= '&gvguess=1';
             }
         }
 
@@ -221,8 +229,7 @@ function shortcode_portfolio_galeria() {
             <a href="<?php echo esc_url($href); ?>"
                class="glightbox"
                data-gallery="galeria"
-               <?php echo ($data_type === 'video' ? 'data-type="video"' : ''); ?>
-               <?php echo $glightbox_extra; ?>>
+               <?php echo ($data_type === 'video' ? 'data-type="video"' : ''); ?>>
                 <img src="<?php echo esc_url($img_main); ?>"
                      alt="<?php echo esc_attr(get_the_title($post_id)); ?>"
                      loading="lazy">
