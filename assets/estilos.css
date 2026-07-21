@@ -318,25 +318,6 @@ body.glightbox-open {
     height: auto !important;
 }
 
-/* ---- Debug: Vimeo ratio detection failed, no fallback applied ----
-   Reverts the sizing overrides above entirely so native/default GLightbox
-   behavior shows through instead of a fake 16:9 box - makes it obvious
-   when real-ratio detection isn't working. */
-.gslide-video.gvideo-no-ratio .ginner-container,
-.gslide-video.gvideo-no-ratio .gslide-media,
-.gslide-video.gvideo-no-ratio .gvideo-wrapper {
-    width: revert !important;
-    max-width: revert !important;
-    height: revert !important;
-}
-
-.gslide-video.gvideo-no-ratio .plyr__video-embed,
-.gslide-video.gvideo-no-ratio .plyr {
-    aspect-ratio: revert !important;
-    width: revert !important;
-    height: revert !important;
-}
-
 /* ============================================================
    Portfolio grid — play button overlay on video thumbnails
    ============================================================ */
