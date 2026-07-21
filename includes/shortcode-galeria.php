@@ -205,8 +205,8 @@ function shortcode_portfolio_galeria() {
                 <?php if ($data_type === 'video') : ?>
                 <span class="portfolio-play-btn" aria-hidden="true" style="position:absolute;top:0;left:0;right:0;bottom:0;width:60px;height:60px;margin:auto;display:block;pointer-events:none;z-index:2;">
                     <svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="30" cy="30" r="30" fill="rgba(0,0,0,0.55)"/>
-                        <polygon points="23,16 47,30 23,44" fill="#ffffff"/>
+                        <circle cx="30" cy="30" r="27" fill="#e3121f" stroke="#ffffff" stroke-width="3"/>
+                        <polygon points="24,17 46,30 24,43" fill="#ffffff"/>
                     </svg>
                 </span>
                 <?php endif; ?>
