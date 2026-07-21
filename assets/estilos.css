@@ -1,0 +1,398 @@
+/* Filter buttons */
+.filtros-portafolio {
+    text-align: center;
+    margin-bottom: 30px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+}
+.filtros-responsive-wrapper {
+   background: rgba(0, 0, 0, 0.5); /* semi-transparent */
+   border: 1px solid #2E2E2E;
+   padding: 12px;
+   border-radius: 60px;
+    display: inline-flex;
+    flex-wrap: nowrap;
+    gap: 10px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    max-width: 100%;
+
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+.filtro {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.filtro.style-btn {
+    color: #fff;
+    background: linear-gradient(0deg, rgba(87, 87, 87, 1) 0%, rgba(56, 56, 56, 1) 100%);
+    border-radius: 30px;
+    padding: 7px 20px;
+    font-weight: 700;
+    font-size: 12px;
+    border: none;
+
+    min-width: 120px; /* Uniform minimum width */
+    text-align: center;
+    white-space: nowrap; /* Prevent line breaks */
+    flex-shrink: 0; /* Prevent shrinking on scroll */
+}
+
+
+.filtro.style-btn:hover,
+.filtro.style-btn.activo {
+    background: linear-gradient(0deg, rgba(227, 18, 31, 1) 0%, rgba(154, 8, 18, 1) 100%);
+    border-color: transparent;
+}
+
+/* Gallery container - Flex */
+.grid-portafolio {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+/* Hide grid until hash filter applies, prevents flash of all items */
+.grid-portafolio.hash-pending {
+    visibility: hidden;
+    opacity: 0;
+}
+.grid-portafolio.hash-ready {
+    visibility: visible;
+    opacity: 1;
+    transition: opacity 0.2s ease;
+}
+
+/* Individual gallery item */
+.item-portafolio {
+    width: 33.333%; /* 3 columns with gap compensation */
+    box-sizing: border-box;
+}
+
+.item-portafolio img {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    display: block;
+}
+
+/* Mobile: 2 columns */
+@media (max-width: 900px) {
+.grid-portafolio {
+    display: flex;
+    gap: 0;
+}
+    .item-portafolio {
+        width: 50%;
+    }
+    .filtros-responsive-wrapper {
+        background: rgba(0, 0, 0, 0); /* semi-transparent */
+        border: none;
+        padding: 5px;
+        border-radius: 0px;
+        display: inline-flex;
+        flex-wrap: nowrap;
+        gap: 10px;
+        overflow-x: auto;
+        scrollbar-width: none;
+        max-width: 100%;
+        backdrop-filter: blur(0px);
+        -webkit-backdrop-filter: blur(0px);
+        box-shadow: 0;
+}
+        .filtros-wrapper-contenedor {
+        display: flex !important;
+        flex-direction: row !important;
+        gap: 5px;
+        background: rgba(0, 0, 0, 0.5); /* semi-transparent */
+        border: 1px solid #2E2E2E;
+        border-radius: 60px;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        margin-bottom: 30px;
+        padding: 10px 10px;
+    }
+}
+
+@media (max-width: 600px) {
+    .item-portafolio {
+        width: 50%;
+    }
+    button.filtro {
+    width: auto;
+    min-width: 50%;
+}
+}
+/* Responsive filter scroll */
+.filtros-responsive-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    position: relative;
+    overflow: hidden;
+    max-width: 100%;
+    /*margin-bottom: 30px;*/
+}
+.filtros-portafolio-scroll {
+    display: flex;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    gap: 10px;
+    padding: 10px 5px;
+    scrollbar-width: none; /* Firefox */
+}
+
+.filtros-portafolio-scroll::-webkit-scrollbar {
+    display: none; /* Chrome */
+}
+
+.chevron {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid #ffffff;
+    border-radius: 50%;
+    font-size: 20px;
+    color: #ffffff;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 12px;
+}
+
+.chevron:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: #dadada;
+    color: #dadada;
+}
+
+@media (min-width: 768px) {
+    .filtros-responsive-wrapper {
+        justify-content: center;
+    }
+    .chevron {
+        display: none;
+    }
+}
+
+
+
+*/
+
+/* Hide scrollbar in Webkit browsers */
+.filtros-responsive-wrapper::-webkit-scrollbar {
+    display: none;
+}
+
+/* Parent container - right-align on large screens */
+.filtros-align-right {
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+}
+
+/*------------------*/
+
+/* Large screens only */
+@media (min-width: 1024px) {
+    .gslide-image img {
+        max-width: 75vw !important;
+        height: auto !important;
+        margin: 0 auto;
+        display: block;
+    }
+
+    .glightbox-clean .gslide-inner-content {
+        max-width: 75vw !important;
+        margin: 0 auto;
+    }
+}
+
+.glightbox-open {
+    overflow-x: hidden !important;
+}
+
+.gslide-image {
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    max-height: 90vh;
+}
+
+.gslide-image img {
+    width: 100% !important;
+    height: auto;
+    object-fit: contain;
+}
+
+body.glightbox-open {
+    overflow-x: hidden !important;
+}
+
+.glightbox-clean .gslide-inner-content {
+    overflow-y: auto;
+    max-height: 90vh;
+    -webkit-overflow-scrolling: touch;
+}
+
+.gslide-inner-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+/* ============================================================
+   GLightbox — VIDEO ONLY (images above are completely untouched)
+   All rules scoped to .gslide-video so they never affect images.
+   Format classes are applied by JS auto-detection at runtime.
+   ============================================================ */
+
+/* --- Base video slide resets --- */
+
+/* Override the 75vw cap that applies to all slides */
+@media (min-width: 1024px) {
+    .glightbox-clean .gslide-video .gslide-inner-content {
+        max-width: unset !important;
+        margin: 0 auto;
+    }
+}
+
+/* Black background, no white strips */
+.gslide-video .gvideo-wrapper {
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Plyr containers fill the wrapper naturally */
+.gslide-video .plyr,
+.gslide-video .plyr__video-wrapper,
+.gslide-video .plyr__video-embed {
+    width: 100% !important;
+}
+
+/* iframe base */
+.gslide-video .gvideo-wrapper iframe,
+.gslide-video .plyr__video-embed iframe {
+    display: block;
+    border: none;
+    background: #000;
+    width: 100% !important;
+}
+
+
+/* ---- FORMAT: landscape (16:9) — standard YouTube / Vimeo ---- */
+
+.gslide-video.gvideo-format-landscape .ginner-container,
+.gslide-video.gvideo-format-landscape .gslide-media,
+.gslide-video.gvideo-format-landscape .gvideo-wrapper {
+    width: 90vw !important;
+    max-width: 960px !important;
+    height: auto !important;
+}
+
+.gslide-video.gvideo-format-landscape .plyr__video-embed,
+.gslide-video.gvideo-format-landscape .plyr {
+    aspect-ratio: 16 / 9;
+    height: auto !important;
+}
+
+
+/* ---- FORMAT: short (9:16) — YouTube Shorts ---- */
+
+.gslide-video.gvideo-format-short .ginner-container,
+.gslide-video.gvideo-format-short .gslide-media,
+.gslide-video.gvideo-format-short .gvideo-wrapper {
+    width: auto !important;
+    max-width: 360px !important;
+    height: 80vh !important;
+    max-height: 640px !important;
+}
+
+.gslide-video.gvideo-format-short .plyr__video-embed,
+.gslide-video.gvideo-format-short .plyr {
+    aspect-ratio: 9 / 16;
+    height: 100% !important;
+    width: auto !important;
+    max-width: 360px !important;
+}
+
+.gslide-video.gvideo-format-short .gvideo-wrapper iframe,
+.gslide-video.gvideo-format-short .plyr__video-embed iframe {
+    width: 100% !important;
+    height: 100% !important;
+    min-width: unset !important;
+}
+
+
+/* ---- FORMAT: square (1:1) — fallback ---- */
+
+.gslide-video.gvideo-format-square .ginner-container,
+.gslide-video.gvideo-format-square .gslide-media,
+.gslide-video.gvideo-format-square .gvideo-wrapper {
+    width: 70vh !important;
+    max-width: 640px !important;
+    height: 70vh !important;
+    max-height: 640px !important;
+}
+
+.gslide-video.gvideo-format-square .plyr__video-embed,
+.gslide-video.gvideo-format-square .plyr {
+    aspect-ratio: 1 / 1;
+    height: 100% !important;
+}
+
+/* ============================================================
+   Portfolio grid — play button overlay on video thumbnails
+   ============================================================ */
+
+.item-portafolio a {
+    position: relative !important;
+    display: block !important;
+    overflow: hidden;
+}
+
+.portfolio-play-btn {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    margin: auto !important;
+    transform: none !important;
+    width: 60px !important;
+    height: 60px !important;
+    display: block !important;
+    pointer-events: none !important;
+    transition: opacity 0.2s ease, width 0.2s ease, height 0.2s ease;
+    opacity: 0.85;
+    z-index: 2;
+    line-height: 0;
+    font-size: 0;
+}
+
+.portfolio-play-btn svg {
+    width: 60px !important;
+    height: 60px !important;
+    display: block !important;
+    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.6));
+}
+
+.item-portafolio a:hover .portfolio-play-btn {
+    width: 68px !important;
+    height: 68px !important;
+    opacity: 1;
+}
