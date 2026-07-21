@@ -68,6 +68,14 @@ function shortcode_portfolio_galeria() {
         $img_sec      = get_field('imagen_secundaria', $post_id);
         $raw_url      = trim((string) get_field('video_url', $post_id));
 
+        // Allow pasting a full <iframe> embed snippet (e.g. Vimeo/YouTube's
+        // "Share > Embed" code) instead of a bare URL - pull the src out of it.
+        if ($raw_url && stripos($raw_url, '<iframe') !== false) {
+            if (preg_match('#src=["\']([^"\']+)["\']#i', $raw_url, $ifr)) {
+                $raw_url = html_entity_decode($ifr[1]);
+            }
+        }
+
         // Normalize YouTube URLs (including Shorts)
         $video_url = '';
         $is_short  = false;
