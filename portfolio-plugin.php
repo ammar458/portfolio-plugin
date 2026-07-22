@@ -2,7 +2,7 @@
 /*
 Plugin Name: Custom Portfolio
 Description: Plugin to manage and display a portfolio with filters and lightbox.
-Version: 1.22
+Version: 1.23
 Author: Ricardo Frassati
 GitHub Plugin URI: ammar458/portfolio-plugin
 */
@@ -33,15 +33,3 @@ function portfolio_plugin_assets() {
     wp_enqueue_style('portfolio-styles', plugin_dir_url(__FILE__) . 'assets/estilos.css');
 }
 add_action('wp_enqueue_scripts', 'portfolio_plugin_assets');
-
-// Video slides open a direct iframe to the provider (see glightbox-init.js) -
-// preconnecting means the DNS/TLS handshake for that new origin is already
-// done by the time someone actually opens a video, instead of starting cold
-// at click time.
-function portfolio_plugin_video_preconnects() {
-    echo '<link rel="preconnect" href="https://player.vimeo.com">' . "\n";
-    echo '<link rel="preconnect" href="https://i.vimeocdn.com">' . "\n";
-    echo '<link rel="preconnect" href="https://www.youtube.com">' . "\n";
-    echo '<link rel="preconnect" href="https://www.youtube-nocookie.com">' . "\n";
-}
-add_action('wp_head', 'portfolio_plugin_video_preconnects', 1);

@@ -66,21 +66,6 @@ add_shortcode('portfolio_filtros', 'shortcode_portfolio_filtros');
  * bare vimeo.com URL (no pasted iframe) still gets sized to its true aspect
  * ratio instead of defaulting to landscape. Cached in post meta - only ever
  * hits the network once per video.
- *
- * Never makes that network call on the request that's rendering the grid:
- * this host has been observed to have Vimeo's oEmbed endpoint blocked/slow
- * outright, and portfolio_galeria renders every item in one pass before any
- * HTML reaches the browser - one stalled oEmbed call (up to the old 5s
- * timeout) delayed the *entire* grid, image items included, not just the
- * video it belonged to. With several uncached videos on one page that
- * compounds into the whole "everything is slow to load" symptom.
- *
- * Instead this returns immediately (falling back to a guessed ratio, same
- * as an outright failure - the browser corrects it once the lightbox opens,
- * via fetchVimeoRatioClientSide in glightbox-init.js, which isn't subject to
- * this server's network restrictions) and schedules the real lookup as a
- * background WP-Cron job, so it never blocks a real visitor and the cache
- * is warm for next time.
  */
 function portfolio_get_vimeo_ratio($post_id, $vimeo_page_url) {
     $cache_key = '_video_ratio_' . md5($vimeo_page_url);
@@ -95,53 +80,34 @@ function portfolio_get_vimeo_ratio($post_id, $vimeo_page_url) {
         delete_post_meta($post_id, $cache_key);
     }
 
-    // Short-lived failure cache: retries automatically once this expires
-    // instead of getting stuck if this was just a transient network hiccup
-    // (unlike a permanent post-meta "failed" marker would).
+    // Short-lived failure cache: retries automatically on the next page
+    // load instead of getting stuck if this was just a transient network
+    // hiccup (unlike a permanent post-meta "failed" marker would).
     $fail_key = 'ppgh_vimeo_fail_' . md5($vimeo_page_url);
     if (get_transient($fail_key)) {
         return '';
     }
 
-    if (!wp_next_scheduled('portfolio_fetch_vimeo_ratio_event', [$post_id, $vimeo_page_url])) {
-        wp_schedule_single_event(time(), 'portfolio_fetch_vimeo_ratio_event', [$post_id, $vimeo_page_url]);
-    }
-
-    return '';
-}
-
-/**
- * The actual oEmbed network call, moved out of portfolio_get_vimeo_ratio so
- * it runs as a background WP-Cron job instead of blocking a visitor's page
- * load (see the comment above that function for why).
- */
-function portfolio_fetch_vimeo_ratio_bg($post_id, $vimeo_page_url) {
-    $cache_key = '_video_ratio_' . md5($vimeo_page_url);
-    $fail_key  = 'ppgh_vimeo_fail_' . md5($vimeo_page_url);
-
-    if (get_transient($fail_key)) {
-        return;
-    }
-
     $response = wp_remote_get(
         'https://vimeo.com/api/oembed.json?url=' . urlencode($vimeo_page_url),
-        ['timeout' => 10]
+        ['timeout' => 5]
     );
 
     if (is_wp_error($response) || 200 !== wp_remote_retrieve_response_code($response)) {
         set_transient($fail_key, 1, HOUR_IN_SECONDS);
-        return;
+        return '';
     }
 
     $data = json_decode(wp_remote_retrieve_body($response), true);
     if (empty($data['width']) || empty($data['height'])) {
         set_transient($fail_key, 1, HOUR_IN_SECONDS);
-        return;
+        return '';
     }
 
-    update_post_meta($post_id, $cache_key, $data['width'] . '/' . $data['height']);
+    $ratio = $data['width'] . '/' . $data['height'];
+    update_post_meta($post_id, $cache_key, $ratio);
+    return $ratio;
 }
-add_action('portfolio_fetch_vimeo_ratio_event', 'portfolio_fetch_vimeo_ratio_bg', 10, 2);
 
 
 // Shortcode: [portfolio_galeria]
@@ -199,32 +165,27 @@ function shortcode_portfolio_galeria() {
         }
 
         // Normalize YouTube URLs (including Shorts)
-        $video_url      = '';
-        $video_provider = ''; // 'vimeo' or 'youtube' - drives which autoplay/mute params are valid below
-        $is_vertical    = false;
+        $video_url = '';
+        $is_vertical = false;
         if ($raw_url) {
             // YouTube Shorts: youtube.com/shorts/VIDEO_ID
             if (preg_match('#youtube\.com/shorts/([a-zA-Z0-9_-]+)#', $raw_url, $m)) {
-                $video_url      = 'https://www.youtube.com/embed/' . $m[1];
-                $video_provider = 'youtube';
-                $is_vertical    = true;
+                $video_url = 'https://www.youtube.com/embed/' . $m[1];
+                $is_vertical = true;
             // youtu.be/VIDEO_ID (short link, may also be a Short)
             } elseif (strpos($raw_url, 'youtu.be/') !== false) {
                 $path      = ltrim(parse_url($raw_url, PHP_URL_PATH), '/');
                 $video_id  = preg_replace('#^shorts/#', '', $path);
-                $video_url      = 'https://www.youtube.com/embed/' . $video_id;
-                $video_provider = 'youtube';
+                $video_url = 'https://www.youtube.com/embed/' . $video_id;
             // Standard youtube.com/watch?v=VIDEO_ID
             } elseif (strpos($raw_url, 'youtube.com/watch') !== false) {
                 parse_str((string) parse_url($raw_url, PHP_URL_QUERY), $params);
                 if (!empty($params['v'])) {
-                    $video_url      = 'https://www.youtube.com/embed/' . $params['v'];
-                    $video_provider = 'youtube';
+                    $video_url = 'https://www.youtube.com/embed/' . $params['v'];
                 }
             // Vimeo Showcase (album): vimeo.com/showcase/ID
             } elseif (preg_match('#vimeo\.com/showcase/(\d+)#', $raw_url, $m)) {
-                $video_url      = 'https://vimeo.com/showcase/' . $m[1] . '/embed';
-                $video_provider = 'vimeo';
+                $video_url = 'https://vimeo.com/showcase/' . $m[1] . '/embed';
                 parse_str((string) parse_url($raw_url, PHP_URL_QUERY), $vparams);
                 if (!empty($vparams['h'])) {
                     $video_url .= '?h=' . $vparams['h'];
@@ -239,8 +200,7 @@ function shortcode_portfolio_galeria() {
                     parse_str((string) parse_url($raw_url, PHP_URL_QUERY), $vparams);
                     $vimeo_hash = $vparams['h'] ?? '';
                 }
-                $video_url      = 'https://player.vimeo.com/video/' . $m[1];
-                $video_provider = 'vimeo';
+                $video_url = 'https://player.vimeo.com/video/' . $m[1];
                 if ($vimeo_hash) {
                     $video_url .= '?h=' . $vimeo_hash;
                 }
@@ -273,11 +233,11 @@ function shortcode_portfolio_galeria() {
         //
         // Encoded directly into the video URL (query params, ignored by the
         // player) rather than a data-* attribute on the trigger element:
-        // the lightbox is given this href verbatim (see glightbox-init.js),
-        // so JS can read the ratio straight off the actual slide being shown.
-        // A data-attribute lookup would need to re-match the trigger element
-        // by slide index, which breaks as soon as Isotope filtering reorders
-        // the grid out from under the original element order.
+        // GLightbox sets the rendered iframe's src to this exact URL, so JS
+        // can read the ratio straight off the actual slide being shown. A
+        // data-attribute lookup would need to re-match the trigger element by
+        // slide index, which breaks as soon as Isotope filtering reorders
+        // the grid out from under GLightbox's original element order.
         if ($data_type === 'video') {
             $ratio_is_guess = !$video_ratio;
             if (!$video_ratio) {
@@ -291,22 +251,6 @@ function shortcode_portfolio_galeria() {
                 // it isn't subject to the server's outbound request limits.
                 $href .= '&gvguess=1';
             }
-
-            // Autoplay-on-open used to be handled by GLightbox's bundled
-            // Plyr player calling .play() once ready; now that video slides
-            // render as a plain iframe (data-type="external" - see
-            // glightbox-init.js), it has to be requested directly from the
-            // provider instead. Each provider expects its own param name for
-            // "start muted", and muting is required for autoplay to be
-            // honored at all.
-            if ($video_provider === 'vimeo') {
-                $href .= '&autoplay=1&muted=1';
-            } elseif ($video_provider === 'youtube') {
-                // enablejsapi=1 is also what lets our postMessage pause
-                // command (see pauseVideoIframe in glightbox-init.js) reach
-                // the player when navigating away from this slide.
-                $href .= '&autoplay=1&mute=1&enablejsapi=1';
-            }
         }
 
         ob_start(); ?>
@@ -314,34 +258,15 @@ function shortcode_portfolio_galeria() {
             <a href="<?php echo esc_url($href); ?>"
                class="glightbox"
                data-gallery="galeria"
-               <?php echo ($data_type === 'video' ? 'data-type="external"' : ''); ?>>
+               <?php echo ($data_type === 'video' ? 'data-type="video"' : ''); ?>>
                 <img src="<?php echo esc_url($img_main); ?>"
                      alt="<?php echo esc_attr(get_the_title($post_id)); ?>"
                      loading="lazy">
                 <?php if ($data_type === 'video') : ?>
                 <span class="portfolio-play-btn" aria-hidden="true" style="position:absolute;top:0;left:0;right:0;bottom:0;width:60px;height:60px;margin:auto;display:block;pointer-events:none;z-index:2;">
                     <svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
-                        <defs>
-                            <radialGradient id="ppgh-play-face" cx="35%" cy="30%" r="75%">
-                                <stop offset="0%" stop-color="#ff6a5c"/>
-                                <stop offset="55%" stop-color="#e3121f"/>
-                                <stop offset="100%" stop-color="#9c0c13"/>
-                            </radialGradient>
-                            <linearGradient id="ppgh-play-rim" x1="0%" y1="0%" x2="0%" y2="100%">
-                                <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
-                                <stop offset="45%" stop-color="#ffffff" stop-opacity="0.2"/>
-                                <stop offset="100%" stop-color="#000000" stop-opacity="0.4"/>
-                            </linearGradient>
-                            <linearGradient id="ppgh-play-triangle" x1="0%" y1="0%" x2="0%" y2="100%">
-                                <stop offset="0%" stop-color="#ffffff"/>
-                                <stop offset="100%" stop-color="#e2e2e2"/>
-                            </linearGradient>
-                        </defs>
-                        <circle cx="30" cy="30" r="27" fill="url(#ppgh-play-face)"/>
-                        <circle cx="30" cy="30" r="27" fill="none" stroke="url(#ppgh-play-rim)" stroke-width="2.5"/>
-                        <ellipse cx="23" cy="16" rx="15" ry="7" fill="#ffffff" opacity="0.28"/>
-                        <polygon points="19,17 41,30 19,43" fill="url(#ppgh-play-triangle)"/>
-                        <polygon points="19,17 41,30 19,43" fill="none" stroke="#7a0a10" stroke-opacity="0.3" stroke-width="0.75"/>
+                        <circle cx="30" cy="30" r="27" fill="#e3121f" stroke="#ffffff" stroke-width="3"/>
+                        <polygon points="24,17 46,30 24,43" fill="#ffffff"/>
                     </svg>
                 </span>
                 <?php endif; ?>

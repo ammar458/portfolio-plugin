@@ -12,36 +12,6 @@
         initPortfolioFilters();
     }
 
-    // GLightbox groups slides into one arrows-navigable sequence per
-    // data-gallery value - every item shares the same one ("galeria"),
-    // so arrowing through a video kept pulling in every other tab's items
-    // too, regardless of which filter was active. Re-tag every trigger's
-    // data-gallery to match the currently active tab (or one shared value
-    // when "All" is active) so navigation only ever stays within what's
-    // actually visible.
-    //
-    // GLightbox reads data-gallery two ways: fresh off the clicked element
-    // at open() time, and once into its own internal elements[] list at
-    // init() (never rebuilt afterward) - both need updating here, or the
-    // second one goes stale as soon as a filter changes.
-    function regroupLightboxGallery(filtro) {
-        var isAll = !filtro || filtro === '*';
-        var slug  = isAll ? null : filtro.replace(/^\./, '');
-
-        document.querySelectorAll('.item-portafolio .glightbox').forEach(function (a) {
-            var item    = a.closest('.item-portafolio');
-            var inGroup = isAll || (item && item.classList.contains(slug));
-            a.setAttribute('data-gallery', isAll ? 'galeria-all' : (inGroup ? 'galeria-' + slug : 'galeria-hidden'));
-        });
-
-        var lb = window._glightboxInstance;
-        if (lb && Array.isArray(lb.elements)) {
-            lb.elements.forEach(function (el) {
-                if (el.node) el.gallery = el.node.getAttribute('data-gallery');
-            });
-        }
-    }
-
     function initPortfolioFilters() {
 
         $grid = $('.grid-portafolio');
@@ -64,7 +34,6 @@
             var href   = $(this).attr('href');
 
             $grid.isotope({ filter: filtro });
-            regroupLightboxGallery(filtro);
             $('.filtro').removeClass('activo');
             $(this).addClass('activo');
 
@@ -107,7 +76,6 @@
         if (!$grid || !$grid.data('isotope')) return false;
 
         $grid.isotope({ filter: '.' + hash });
-        regroupLightboxGallery('.' + hash);
         $('.filtro').removeClass('activo');
         $btn.addClass('activo');
         $grid.removeClass('hash-pending').addClass('hash-ready');

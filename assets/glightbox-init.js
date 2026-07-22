@@ -1,7 +1,12 @@
 /**
  * Detect a video's real aspect ratio (as a CSS ratio string like "16/9") from
  * its href. PHP encodes the server-detected ratio directly into the trigger's
- * URL as a gvratio query param.
+ * URL as a gvratio query param. This must be read off the *trigger* element's
+ * href (via slide_before_load), not the rendered slide's iframe src: GLightbox
+ * always hands "video"-type slides to its bundled Plyr player (see
+ * initGLightbox below), which rebuilds the iframe src from scratch - keeping
+ * only the numeric video ID - so gvratio never survives onto the actual
+ * iframe.
  */
 function detectVideoRatio(href) {
     if (!href) return '16/9';
@@ -60,57 +65,41 @@ function fetchVimeoRatioClientSide(href, slide) {
         .catch(function () { /* server's guessed fallback stays in place */ });
 }
 
-/**
- * Vimeo and YouTube both accept simple postMessage commands without needing
- * their full player SDK loaded. Used to stop a slide's video the instant the
- * user navigates away from it: GLightbox only auto-pauses videos routed
- * through its bundled Plyr player, which video slides here deliberately skip
- * (see initGLightbox) - without this they'd just keep playing, muted, behind
- * whatever slide comes next.
- */
-function pauseVideoIframe(slide) {
-    if (!slide) return;
-    var iframe = slide.querySelector('iframe');
-    if (!iframe || !iframe.contentWindow) return;
-
-    var src = iframe.src || '';
-    if (/vimeo\.com/i.test(src)) {
-        iframe.contentWindow.postMessage(JSON.stringify({ method: 'pause' }), '*');
-    } else if (/youtube(-nocookie)?\.com/i.test(src)) {
-        iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }), '*');
-    }
-}
-
 function initGLightbox() {
     if (typeof GLightbox !== 'function') return;
 
-    // Video slides are given data-type="external" (see shortcode-galeria.php)
-    // instead of "video" - GLightbox always hands "video"-type slides to its
-    // bundled Plyr player regardless of the plyr.enabled setting (this build
-    // never actually reads that flag), which means an extra third-party
-    // script fetch plus a round trip through Vimeo's oEmbed API before
-    // anything renders, and it rebuilds the iframe src from scratch,
-    // dropping our gvratio marker and any privacy hash. "external" renders
-    // as a plain iframe using our href exactly as given - faster to first
-    // paint and no query-string stripping.
+    // Note: plyr.enabled is passed for documentation/forward-compat, but this
+    // bundled GLightbox build never actually reads that flag - "video"-type
+    // slides always go through its Plyr player regardless. The ratio fix
+    // below (slide_before_load) works with that reality rather than around it.
     var lightbox = GLightbox({
         selector: '.glightbox',
         autoplayVideos: true,
         touchNavigation: true,
         loop: true,
         zoomable: true,
-        arrows: true
+        arrows: true,
+        videosWidth: '960px',
+        plyr: { enabled: false }
     });
 
-    // Read the ratio off the trigger href and stamp it onto the slide as a
-    // CSS custom property - our own CSS uses it to size the box to the
-    // video's real aspect ratio (see estilos.css).
+    // Read the ratio off the *trigger* href before Plyr gets constructed for
+    // this slide (slide_before_load fires ~200ms ahead of it for video
+    // slides - plenty of time). Two things read this ratio:
+    //  - our own CSS, via the --gvideo-ratio custom property on the slide
+    //  - GLightbox's internal resize() math and Plyr's initial box shape,
+    //    both of which read settings.plyr.config.ratio (otherwise stuck on
+    //    Plyr's hardcoded default of "16:9", which is exactly why portrait
+    //    videos were being boxed as landscape and cropped to fit).
     function onSlideBeforeLoad(data) {
-        var href = (data.slideConfig && data.slideConfig.href) || (data.trigger && data.trigger.href) || '';
-        if (!/[?&]gvratio=/.test(href)) return;
+        var slideConfig = data.slideConfig || {};
+        if (slideConfig.type !== 'video') return;
 
+        var href = slideConfig.href || (data.trigger && data.trigger.href) || '';
         var ratio = detectVideoRatio(href);
+
         applyVideoRatio(data.slide, ratio);
+        lightbox.settings.plyr.config.ratio = ratio.replace('/', ':');
 
         // Server only had a guessed ratio for this Vimeo video - try to get
         // the real one from the browser instead.
@@ -120,10 +109,6 @@ function initGLightbox() {
     }
 
     lightbox.on('slide_before_load', onSlideBeforeLoad);
-
-    lightbox.on('slide_before_change', function (data) {
-        if (data && data.prev) pauseVideoIframe(data.prev.slide);
-    });
 
     return lightbox;
 }
