@@ -255,38 +255,23 @@ body.glightbox-open {
 
 /* ============================================================
    GLightbox — VIDEO ONLY (images above are completely untouched)
-   All rules scoped to .gslide-video so they never affect images.
-   Format classes are applied by JS auto-detection at runtime.
+   Video slides use data-type="external" (see glightbox-init.js), which
+   GLightbox renders as a plain iframe instead of routing through its
+   bundled Plyr player - so there's no .gvideo-wrapper/.plyr markup here,
+   just the iframe sitting directly inside .gslide-media. All rules scoped
+   to .gslide-external so they never affect images.
    ============================================================ */
-
-/* --- Base video slide resets --- */
 
 /* Override the 75vw cap that applies to all slides */
 @media (min-width: 1024px) {
-    .glightbox-clean .gslide-video .gslide-inner-content {
+    .glightbox-clean .gslide-external .gslide-inner-content {
         max-width: unset !important;
         margin: 0 auto;
     }
 }
 
-/* Black background, no white strips */
-.gslide-video .gvideo-wrapper {
-    background: #000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* Plyr containers fill the wrapper naturally */
-.gslide-video .plyr,
-.gslide-video .plyr__video-wrapper,
-.gslide-video .plyr__video-embed {
-    width: 100% !important;
-}
-
 /* iframe base */
-.gslide-video .gvideo-wrapper iframe,
-.gslide-video .plyr__video-embed iframe {
+.gslide-external .gslide-media iframe {
     display: block;
     border: none;
     background: #000;
@@ -298,24 +283,23 @@ body.glightbox-open {
 
 /* ---- Video sizing: fits the box to each video's real aspect ratio ----
    --gvideo-ratio is stamped per-slide by glightbox-init.js (from the
-   PHP-detected data-video-ratio attribute). width = min(90vw, 90vh * ratio)
+   gvratio query param on the trigger's href). width = min(90vw, 90vh * ratio)
    is the standard CSS "contain" formula: it picks whichever of the two
    viewport limits is tighter, then aspect-ratio derives the matching height,
    so ANY ratio (portrait, landscape, square) fits without a fixed bucket. */
 
-.gslide-video .ginner-container,
-.gslide-video .gslide-media,
-.gslide-video .gvideo-wrapper {
+.gslide-external .ginner-container,
+.gslide-external .gslide-media {
     width: min(90vw, calc(90vh * var(--gvideo-ratio, 16 / 9))) !important;
     max-width: 1280px !important;
     height: auto !important;
 }
 
-.gslide-video .plyr__video-embed,
-.gslide-video .plyr {
+.gslide-external .gslide-media {
     aspect-ratio: var(--gvideo-ratio, 16 / 9);
-    width: 100% !important;
-    height: auto !important;
+    background: #000;
+    position: relative;
+    overflow: hidden;
 }
 
 /* ============================================================
