@@ -32,6 +32,8 @@ class Portfolio_Plugin_GitHub_Updater {
         add_filter('upgrader_source_selection', [$this, 'fix_source_dir'], 10, 4);
         add_filter('upgrader_post_install', [$this, 'after_install'], 10, 3);
         add_filter('plugin_row_meta', [$this, 'row_meta'], 10, 2);
+        add_action('admin_init', [$this, 'maybe_check_now']);
+        add_action('admin_notices', [$this, 'maybe_show_checked_notice']);
     }
 
     private function get_plugin_data() {
@@ -201,7 +203,67 @@ class Portfolio_Plugin_GitHub_Updater {
             if (!empty($release['html_url'])) {
                 $links[] = '<a href="' . esc_url($release['html_url']) . '" target="_blank">' . esc_html__('View changelog') . '</a>';
             }
+
+            $check_url = wp_nonce_url(
+                add_query_arg(
+                    ['ppgh_check_update' => 1, 'plugin' => $this->basename],
+                    self_admin_url('plugins.php')
+                ),
+                'ppgh_check_update_' . $this->basename
+            );
+            $links[] = '<a href="' . esc_url($check_url) . '">' . esc_html__('Check for updates') . '</a>';
         }
         return $links;
+    }
+
+    /**
+     * Handles clicks on the "Check for updates" row-meta link: clears our
+     * cached GitHub response and WP's own update_plugins transient, then
+     * re-runs the real check immediately (the same thing core's "Check
+     * again" button on the Updates page does) instead of waiting for the
+     * next scheduled cron run or 6-hour cache window.
+     */
+    public function maybe_check_now() {
+        if (!isset($_GET['ppgh_check_update'], $_GET['plugin']) || $_GET['plugin'] !== $this->basename) {
+            return;
+        }
+        if (!current_user_can('update_plugins')) {
+            return;
+        }
+        check_admin_referer('ppgh_check_update_' . $this->basename);
+
+        if (!function_exists('wp_update_plugins')) {
+            require_once ABSPATH . 'wp-admin/includes/update.php';
+        }
+
+        delete_transient($this->cache_key);
+        delete_site_transient('update_plugins');
+        wp_update_plugins();
+
+        $redirect = remove_query_arg(['ppgh_check_update', 'plugin', '_wpnonce']);
+        wp_safe_redirect(add_query_arg('ppgh_checked', $this->plugin_slug, $redirect));
+        exit;
+    }
+
+    public function maybe_show_checked_notice() {
+        if (empty($_GET['ppgh_checked']) || $_GET['ppgh_checked'] !== $this->plugin_slug) {
+            return;
+        }
+        if (!current_user_can('update_plugins')) {
+            return;
+        }
+
+        $release = $this->get_latest_release();
+        if (!empty($release['version']) && version_compare($release['version'], $this->current_version(), '>')) {
+            $message = sprintf(
+                /* translators: %s: latest available version number */
+                esc_html__('Custom Portfolio: version %s is available - refresh this page to see the update.', 'custom-portfolio'),
+                esc_html($release['version'])
+            );
+        } else {
+            $message = esc_html__('Custom Portfolio: you already have the latest version.', 'custom-portfolio');
+        }
+
+        echo '<div class="notice notice-info is-dismissible"><p>' . $message . '</p></div>';
     }
 }
