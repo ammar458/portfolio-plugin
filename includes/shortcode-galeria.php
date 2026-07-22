@@ -284,8 +284,8 @@ function shortcode_portfolio_galeria() {
                         <circle cx="30" cy="30" r="27" fill="url(#ppgh-play-face)"/>
                         <circle cx="30" cy="30" r="27" fill="none" stroke="url(#ppgh-play-rim)" stroke-width="2.5"/>
                         <ellipse cx="23" cy="16" rx="15" ry="7" fill="#ffffff" opacity="0.28"/>
-                        <polygon points="24,17 46,30 24,43" fill="url(#ppgh-play-triangle)"/>
-                        <polygon points="24,17 46,30 24,43" fill="none" stroke="#7a0a10" stroke-opacity="0.3" stroke-width="0.75"/>
+                        <polygon points="19,17 41,30 19,43" fill="url(#ppgh-play-triangle)"/>
+                        <polygon points="19,17 41,30 19,43" fill="none" stroke="#7a0a10" stroke-opacity="0.3" stroke-width="0.75"/>
                     </svg>
                 </span>
                 <?php endif; ?>
