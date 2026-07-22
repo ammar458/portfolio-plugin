@@ -265,8 +265,27 @@ function shortcode_portfolio_galeria() {
                 <?php if ($data_type === 'video') : ?>
                 <span class="portfolio-play-btn" aria-hidden="true" style="position:absolute;top:0;left:0;right:0;bottom:0;width:60px;height:60px;margin:auto;display:block;pointer-events:none;z-index:2;">
                     <svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="30" cy="30" r="27" fill="#e3121f" stroke="#ffffff" stroke-width="3"/>
-                        <polygon points="24,17 46,30 24,43" fill="#ffffff"/>
+                        <defs>
+                            <radialGradient id="ppgh-play-face" cx="35%" cy="30%" r="75%">
+                                <stop offset="0%" stop-color="#ff6a5c"/>
+                                <stop offset="55%" stop-color="#e3121f"/>
+                                <stop offset="100%" stop-color="#9c0c13"/>
+                            </radialGradient>
+                            <linearGradient id="ppgh-play-rim" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+                                <stop offset="45%" stop-color="#ffffff" stop-opacity="0.2"/>
+                                <stop offset="100%" stop-color="#000000" stop-opacity="0.4"/>
+                            </linearGradient>
+                            <linearGradient id="ppgh-play-triangle" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#ffffff"/>
+                                <stop offset="100%" stop-color="#e2e2e2"/>
+                            </linearGradient>
+                        </defs>
+                        <circle cx="30" cy="30" r="27" fill="url(#ppgh-play-face)"/>
+                        <circle cx="30" cy="30" r="27" fill="none" stroke="url(#ppgh-play-rim)" stroke-width="2.5"/>
+                        <ellipse cx="23" cy="16" rx="15" ry="7" fill="#ffffff" opacity="0.28"/>
+                        <polygon points="24,17 46,30 24,43" fill="url(#ppgh-play-triangle)"/>
+                        <polygon points="24,17 46,30 24,43" fill="none" stroke="#7a0a10" stroke-opacity="0.3" stroke-width="0.75"/>
                     </svg>
                 </span>
                 <?php endif; ?>
