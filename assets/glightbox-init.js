@@ -65,15 +65,65 @@ function fetchVimeoRatioClientSide(href, slide) {
         .catch(function () { /* server's guessed fallback stays in place */ });
 }
 
+var _portfolioLightboxHasExplicitSet = false;
+
+function setActivePortfolioLightboxTriggers(elements) {
+    var allTriggers = document.querySelectorAll('.grid-portafolio .glightbox');
+
+    allTriggers.forEach(function (trigger) {
+        trigger.classList.remove('portfolio-lightbox-active');
+    });
+
+    // filtros.js passes the exact set returned by Isotope. This keeps the
+    // lightbox slider limited to the category currently visible on screen.
+    // An empty array is still an explicit set and must remain empty.
+    var hasExplicitElements = elements !== undefined &&
+        elements !== null &&
+        typeof elements.length !== 'undefined';
+
+    _portfolioLightboxHasExplicitSet = hasExplicitElements;
+
+    if (hasExplicitElements) {
+        Array.prototype.forEach.call(elements, function (trigger) {
+            if (trigger && trigger.classList) {
+                trigger.classList.add('portfolio-lightbox-active');
+            }
+        });
+        return;
+    }
+
+    // Initial page load fallback, before Isotope reports its filtered items.
+    allTriggers.forEach(function (trigger) {
+        var item = trigger.closest('.item-portafolio');
+        if (!item) return;
+
+        var hidden = item.classList.contains('isotope-hidden') ||
+            item.getAttribute('aria-hidden') === 'true' ||
+            window.getComputedStyle(item).display === 'none';
+
+        if (!hidden) {
+            trigger.classList.add('portfolio-lightbox-active');
+        }
+    });
+}
+
 function initGLightbox() {
     if (typeof GLightbox !== 'function') return;
+
+    // On first load there is no explicit active set yet, so use the items
+    // currently visible in the grid. Later refreshes receive Isotope's exact
+    // filtered set through refreshPortfolioLightbox().
+    if (!_portfolioLightboxHasExplicitSet &&
+        !document.querySelector('.grid-portafolio .portfolio-lightbox-active')) {
+        setActivePortfolioLightboxTriggers();
+    }
 
     // Note: plyr.enabled is passed for documentation/forward-compat, but this
     // bundled GLightbox build never actually reads that flag - "video"-type
     // slides always go through its Plyr player regardless. The ratio fix
     // below (slide_before_load) works with that reality rather than around it.
     var lightbox = GLightbox({
-        selector: '.glightbox',
+        selector: '.grid-portafolio .glightbox.portfolio-lightbox-active',
         autoplayVideos: true,
         touchNavigation: true,
         loop: true,
@@ -114,15 +164,42 @@ function initGLightbox() {
 }
 
 var _glightboxInstance = null;
+var _glightboxRefreshTimer = null;
+
+/**
+ * Rebuild GLightbox using only the links in Isotope's current filtered set.
+ * Without this, GLightbox keeps its original all-category element list, so
+ * next/previous can slide from Web Design into hidden Videos or other topics.
+ */
+function refreshPortfolioLightbox(activeTriggers) {
+    if (activeTriggers && typeof activeTriggers.length !== 'undefined') {
+        setActivePortfolioLightboxTriggers(activeTriggers);
+    } else {
+        setActivePortfolioLightboxTriggers();
+    }
+
+    clearTimeout(_glightboxRefreshTimer);
+    _glightboxRefreshTimer = setTimeout(function () {
+        if (_glightboxInstance && typeof _glightboxInstance.destroy === 'function') {
+            _glightboxInstance.destroy();
+        }
+
+        _glightboxInstance = initGLightbox();
+    }, 0);
+}
+
+window.refreshPortfolioLightbox = refreshPortfolioLightbox;
 
 document.addEventListener('DOMContentLoaded', function () {
-    setTimeout(function() { _glightboxInstance = initGLightbox(); }, 5);
+    setTimeout(function() {
+        refreshPortfolioLightbox();
+    }, 5);
 });
 
-// Re-init if Elementor or AJAX injects content dynamically
+// Re-init if Elementor or AJAX injects portfolio content dynamically.
 var _glightboxObserver = new MutationObserver(function() {
-    if (!document.querySelector('.glightbox')) return;
-    if (_glightboxInstance) return; // already running
-    _glightboxInstance = initGLightbox();
+    if (!document.querySelector('.grid-portafolio .glightbox')) return;
+    if (_glightboxInstance) return;
+    refreshPortfolioLightbox();
 });
 _glightboxObserver.observe(document.body, { childList: true, subtree: true });

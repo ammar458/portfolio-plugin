@@ -5,14 +5,24 @@ if (!defined('ABSPATH')) {
 }
 
 
-// Shortcode: [portfolio_filtros]
-
-function shortcode_portfolio_filtros() {
-
+/**
+ * Portfolio Type terms to show in a filter bar: published items only,
+ * "Hide from filter bar" (ocultar_categoria) terms excluded, ordered by the
+ * "orden_menu" ACF field. Shared by every shortcode that renders a category
+ * filter/tab bar.
+ */
+function portfolio_visible_terms() {
+    // Only include categories that contain at least one published portfolio
+    // item. A second frontend check removes any term whose posts cannot be
+    // rendered, such as an item missing its required media.
     $terms = get_terms([
         'taxonomy'   => 'tipo_portafolio',
-        'hide_empty' => false,
+        'hide_empty' => true,
     ]);
+
+    if (is_wp_error($terms)) {
+        $terms = [];
+    }
 
     // Skip categories marked "Hide from filter bar" (ACF true/false field
     // "ocultar_categoria" on the tipo_portafolio taxonomy). Checking for
@@ -28,6 +38,16 @@ function shortcode_portfolio_filtros() {
         $order_b = get_field('orden_menu', $b);
         return $order_a - $order_b;
     });
+
+    return $terms;
+}
+
+
+// Shortcode: [portfolio_filtros]
+
+function shortcode_portfolio_filtros() {
+
+    $terms = portfolio_visible_terms();
 
     ob_start();
     ?>
@@ -110,47 +130,63 @@ function portfolio_get_vimeo_ratio($post_id, $vimeo_page_url) {
 }
 
 
-// Shortcode: [portfolio_galeria]
-function shortcode_portfolio_galeria() {
-
-    // IDs to show first (in the given order)
-    $priority_ids = [33248, 32544, 32686, 32581, 32644, 51116];
-
-    // Categories marked "Hide from filter bar" (ocultar_categoria) are
-    // pulled from the grid entirely too, not just their filter button - lets
-    // a whole category be taken offline with one checkbox (e.g. while a
-    // display bug is being fixed and tested) instead of a separate toggle.
+/**
+ * Term IDs whose "Hide from filter bar" (ocultar_categoria) ACF field is
+ * checked. Shared by every shortcode that needs to pull a whole category
+ * offline (e.g. while a display bug is being fixed) with one checkbox
+ * instead of a separate toggle per shortcode.
+ */
+function portfolio_hidden_term_ids() {
     $hidden_term_ids = [];
     foreach (get_terms(['taxonomy' => 'tipo_portafolio', 'hide_empty' => false]) as $term) {
         if (get_field('ocultar_categoria', $term)) {
             $hidden_term_ids[] = $term->term_id;
         }
     }
-    $tax_query = [];
-    if ($hidden_term_ids) {
-        $tax_query[] = [
-            'taxonomy' => 'tipo_portafolio',
-            'field'    => 'term_id',
-            'terms'    => $hidden_term_ids,
-            'operator' => 'NOT IN',
-        ];
+    return $hidden_term_ids;
+}
+
+/**
+ * tax_query clause that excludes posts in any hidden category. Returns []
+ * (no-op) when nothing is hidden, so it can always be merged into a
+ * WP_Query args array unconditionally.
+ */
+function portfolio_visible_tax_query() {
+    $hidden_term_ids = portfolio_hidden_term_ids();
+    if (!$hidden_term_ids) {
+        return [];
+    }
+    return [[
+        'taxonomy' => 'tipo_portafolio',
+        'field'    => 'term_id',
+        'terms'    => $hidden_term_ids,
+        'operator' => 'NOT IN',
+    ]];
+}
+
+/**
+ * Resolves a portfolio item's display media: which image/video to open,
+ * the lightbox data-type, and the video-card overlay copy. Shared by every
+ * shortcode that renders a portfolio item, so the YouTube/Vimeo URL
+ * normalization and ratio detection only lives in one place.
+ *
+ * Returns null when the item has no thumbnail or no resolvable target
+ * (nothing to render).
+ */
+function portfolio_prepare_media($post_id) {
+
+    $terms        = get_the_terms($post_id, 'tipo_portafolio');
+    $term_classes = $terms ? join(' ', wp_list_pluck($terms, 'slug')) : '';
+    $img_main     = get_the_post_thumbnail_url($post_id, 'large');
+    $type         = strtolower((string) get_field('tipo_de_contenido', $post_id));
+    $img_sec      = get_field('imagen_secundaria', $post_id);
+    // Editors can fill in either field - Embed Code takes priority if both are set.
+    $raw_url = trim((string) get_field('video_embed_code', $post_id));
+    if (!$raw_url) {
+        $raw_url = trim((string) get_field('video_url', $post_id));
     }
 
-    // ---------- RENDER FUNCTION ----------
-    $render_item = function ($post_id) {
-
-        $terms        = get_the_terms($post_id, 'tipo_portafolio');
-        $term_classes = $terms ? join(' ', wp_list_pluck($terms, 'slug')) : '';
-        $img_main     = get_the_post_thumbnail_url($post_id, 'large');
-        $type         = strtolower((string) get_field('tipo_de_contenido', $post_id));
-        $img_sec      = get_field('imagen_secundaria', $post_id);
-        // Editors can fill in either field - Embed Code takes priority if both are set.
-        $raw_url = trim((string) get_field('video_embed_code', $post_id));
-        if (!$raw_url) {
-            $raw_url = trim((string) get_field('video_url', $post_id));
-        }
-
-        // Allow pasting a full <iframe> embed snippet (e.g. Vimeo/YouTube's
+    // Allow pasting a full <iframe> embed snippet (e.g. Vimeo/YouTube's
         // "Share > Embed" code) instead of a bare URL - pull the src out of it,
         // and keep its exact width/height so the lightbox can preserve the
         // video's real aspect ratio instead of guessing a bucketed format.
@@ -223,7 +259,7 @@ function shortcode_portfolio_galeria() {
             $data_type = 'image';
         }
 
-        if (!$img_main || !$href) return '';
+        if (!$img_main || !$href) return null;
 
         // Tag the video's real aspect ratio so JS can size the lightbox to fit
         // it exactly, rather than snapping to a fixed landscape/short bucket.
@@ -253,22 +289,138 @@ function shortcode_portfolio_galeria() {
             }
         }
 
+        // Video-card content comes only from ACF. Empty fields stay empty and
+        // their matching card elements are not rendered.
+        $video_card_category = '';
+        $video_card_title = '';
+        $video_card_subtitle = '';
+        $video_card_views = '';
+        $video_card_lead_increase = '';
+
+        if ($data_type === 'video' && function_exists('get_field')) {
+            $video_card_category = trim((string) get_field('video_card_category', $post_id));
+            $video_card_title = trim((string) get_field('video_card_title', $post_id));
+            $video_card_subtitle = trim((string) get_field('video_card_subtitle', $post_id));
+            $video_card_views = trim((string) get_field('video_card_views', $post_id));
+            $video_card_lead_increase = trim((string) get_field('video_card_lead_increase', $post_id));
+        }
+
+        $video_accessible_title = $video_card_title ?: get_the_title($post_id);
+        $has_video_card_copy = ($video_card_title !== '' || $video_card_subtitle !== '');
+        $has_video_card_stats = ($video_card_views !== '' || $video_card_lead_increase !== '');
+
+    return [
+        'img_main'                 => $img_main,
+        'href'                     => $href,
+        'data_type'                => $data_type,
+        'term_classes'             => $term_classes,
+        'video_card_category'      => $video_card_category,
+        'video_card_title'         => $video_card_title,
+        'video_card_subtitle'      => $video_card_subtitle,
+        'video_card_views'         => $video_card_views,
+        'video_card_lead_increase' => $video_card_lead_increase,
+        'video_accessible_title'   => $video_accessible_title,
+        'has_video_card_copy'      => $has_video_card_copy,
+        'has_video_card_stats'     => $has_video_card_stats,
+    ];
+}
+
+
+// Shortcode: [portfolio_galeria]
+function shortcode_portfolio_galeria() {
+
+    // IDs to show first (in the given order)
+    $priority_ids = [33248, 32544, 32686, 32581, 32644, 51116];
+
+    // Categories marked "Hide from filter bar" (ocultar_categoria) are
+    // pulled from the grid entirely too, not just their filter button - lets
+    // a whole category be taken offline with one checkbox (e.g. while a
+    // display bug is being fixed and tested) instead of a separate toggle.
+    $tax_query = portfolio_visible_tax_query();
+
+    // ---------- RENDER FUNCTION ----------
+    $render_item = function ($post_id) {
+
+        $media = portfolio_prepare_media($post_id);
+        if (!$media) return '';
+
+        $img_main                 = $media['img_main'];
+        $href                     = $media['href'];
+        $data_type                = $media['data_type'];
+        $video_card_category      = $media['video_card_category'];
+        $video_card_title         = $media['video_card_title'];
+        $video_card_subtitle      = $media['video_card_subtitle'];
+        $video_card_views         = $media['video_card_views'];
+        $video_card_lead_increase = $media['video_card_lead_increase'];
+        $video_accessible_title   = $media['video_accessible_title'];
+        $has_video_card_copy      = $media['has_video_card_copy'];
+        $has_video_card_stats     = $media['has_video_card_stats'];
+
+        $item_classes = trim('item-portafolio ' . $media['term_classes'] . ($data_type === 'video' ? ' is-video' : ''));
+
         ob_start(); ?>
-        <div class="item-portafolio <?php echo esc_attr($term_classes); ?>" style="position:relative;">
+        <div class="<?php echo esc_attr($item_classes); ?>">
             <a href="<?php echo esc_url($href); ?>"
                class="glightbox"
                data-gallery="galeria"
+               aria-label="<?php echo esc_attr($data_type === 'video' ? 'Play ' . $video_accessible_title . ' video' : 'Open ' . get_the_title($post_id)); ?>"
                <?php echo ($data_type === 'video' ? 'data-type="video"' : ''); ?>>
                 <img src="<?php echo esc_url($img_main); ?>"
                      alt="<?php echo esc_attr(get_the_title($post_id)); ?>"
                      loading="lazy">
+
                 <?php if ($data_type === 'video') : ?>
-                <span class="portfolio-play-btn" aria-hidden="true" style="position:absolute;top:0;left:0;right:0;bottom:0;width:60px;height:60px;margin:auto;display:block;pointer-events:none;z-index:2;">
-                    <svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="30" cy="30" r="27" fill="#e3121f" stroke="#ffffff" stroke-width="3"/>
-                        <polygon points="24,17 46,30 24,43" fill="#ffffff"/>
-                    </svg>
-                </span>
+                    <div class="video-card-overlay" aria-hidden="true">
+
+                        <div class="video-card-body">
+                            <?php if ($video_card_category !== '') : ?>
+                                <span class="video-card-category"><?php echo esc_html($video_card_category); ?></span>
+                            <?php endif; ?>
+
+                            <div class="video-card-main-row<?php echo $has_video_card_copy ? '' : ' play-only'; ?>">
+                                <?php if ($has_video_card_copy) : ?>
+                                    <div class="video-card-copy">
+                                        <?php if ($video_card_title !== '') : ?>
+                                            <h3 class="video-card-title"><?php echo esc_html($video_card_title); ?></h3>
+                                        <?php endif; ?>
+
+                                        <?php if ($video_card_subtitle !== '') : ?>
+                                            <p class="video-card-subtitle"><?php echo esc_html($video_card_subtitle); ?></p>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endif; ?>
+
+                                <span class="portfolio-play-btn">
+                                    <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" focusable="false">
+                                        <circle cx="32" cy="32" r="29" fill="none" stroke="#ffffff" stroke-width="2"/>
+                                        <path d="M27 21.5 45 32 27 42.5Z" fill="#ffffff"/>
+                                    </svg>
+                                </span>
+                            </div>
+
+                            <?php if ($has_video_card_stats) : ?>
+                                <div class="video-card-stats">
+                                    <?php if ($video_card_views !== '') : ?>
+                                        <span class="video-card-stat">
+                                            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" focusable="false">
+                                                <path d="M2.2 12s3.6-6 9.8-6 9.8 6 9.8 6-3.6 6-9.8 6-9.8-6-9.8-6Zm9.8 3.6a3.6 3.6 0 1 0 0-7.2 3.6 3.6 0 0 0 0 7.2Z" fill="currentColor"/>
+                                            </svg>
+                                            <span><?php echo esc_html($video_card_views); ?></span>
+                                        </span>
+                                    <?php endif; ?>
+
+                                    <?php if ($video_card_lead_increase !== '') : ?>
+                                        <span class="video-card-stat">
+                                            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" focusable="false">
+                                                <path d="M4 19V11h3v8H4Zm6 0V5h3v14h-3Zm6 0v-6h3v6h-3Z" fill="currentColor"/>
+                                            </svg>
+                                            <span><?php echo esc_html($video_card_lead_increase); ?></span>
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
                 <?php endif; ?>
             </a>
         </div>

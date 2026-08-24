@@ -1,0 +1,23 @@
+VIDEO CARD ACF FIELDS
+
+Video-card logos have been removed. Card elements render only when their matching ACF field contains data.
+
+1. video_card_category
+   Type: Text
+
+2. video_card_title
+   Type: Text
+
+3. video_card_subtitle
+   Type: Text
+
+4. video_card_views
+   Type: Text
+   Currently hidden in the card layout.
+
+5. video_card_lead_increase
+   Type: Text
+   Currently hidden in the card layout.
+
+Location rule:
+Post Type is equal to Portfolio

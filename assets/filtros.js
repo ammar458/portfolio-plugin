@@ -17,6 +17,43 @@
         $grid = $('.grid-portafolio');
         if (!$grid.length) return;
 
+        // Remove category buttons that have no matching cards in the rendered
+        // grid. This also catches posts that WordPress counts for a term but
+        // the gallery skips because required image/video data is missing.
+        $('.filtro[data-filtro]').each(function() {
+            var selector = $(this).attr('data-filtro');
+            if (!selector || selector === '*') return;
+
+            if ($grid.find(selector).length === 0) {
+                $(this).remove();
+            }
+        });
+
+        function refreshFilteredLightbox() {
+            if (typeof window.refreshPortfolioLightbox !== 'function') return;
+
+            var isotope = $grid.data('isotope');
+            var activeTriggers = [];
+
+            if (isotope && isotope.filteredItems) {
+                isotope.filteredItems.forEach(function(item) {
+                    $(item.element).find('.glightbox').each(function() {
+                        activeTriggers.push(this);
+                    });
+                });
+            } else {
+                $grid.find('.item-portafolio:visible .glightbox').each(function() {
+                    activeTriggers.push(this);
+                });
+            }
+
+            window.refreshPortfolioLightbox(activeTriggers);
+        }
+
+        // Isotope updates filteredItems for every category change. Rebuild the
+        // lightbox from that exact list so hidden topics cannot enter the slider.
+        $grid.on('arrangeComplete.portfolioLightbox', refreshFilteredLightbox);
+
         // Hide grid immediately if there's a hash, to prevent flash
         if (hasHash) {
             $grid.addClass('hash-pending');
@@ -27,6 +64,10 @@
             layoutMode: 'fitRows'
         });
 
+        // Ensure the initial ALL view (or the first hash-filtered view) uses
+        // the correct lightbox element list even if arrangeComplete fired early.
+        setTimeout(refreshFilteredLightbox, 50);
+
         // Click handler
         $(document).on('click', '.filtro', function(e) {
             e.preventDefault();
@@ -34,6 +75,7 @@
             var href   = $(this).attr('href');
 
             $grid.isotope({ filter: filtro });
+            refreshFilteredLightbox();
             $('.filtro').removeClass('activo');
             $(this).addClass('activo');
 
@@ -63,8 +105,27 @@
         var hash = (window.location.hash || '').replace('#', '').trim();
 
         if (!hash || hash === 'all') {
-            if ($grid) $grid.removeClass('hash-pending').addClass('hash-ready');
-            return false;
+            if (!$grid || !$grid.data('isotope')) return false;
+
+            $grid.isotope({ filter: '*' });
+
+            var allIsotope = $grid.data('isotope');
+            var allTriggers = [];
+            if (allIsotope && allIsotope.filteredItems) {
+                allIsotope.filteredItems.forEach(function(item) {
+                    $(item.element).find('.glightbox').each(function() {
+                        allTriggers.push(this);
+                    });
+                });
+            }
+            if (typeof window.refreshPortfolioLightbox === 'function') {
+                window.refreshPortfolioLightbox(allTriggers);
+            }
+
+            $('.filtro').removeClass('activo');
+            $('.filtro[data-filtro="*"]').addClass('activo');
+            $grid.removeClass('hash-pending').addClass('hash-ready');
+            return true;
         }
 
         var $btn = $('.filtro[data-filtro=".' + hash + '"]');
@@ -76,6 +137,18 @@
         if (!$grid || !$grid.data('isotope')) return false;
 
         $grid.isotope({ filter: '.' + hash });
+        var isotope = $grid.data('isotope');
+        var activeTriggers = [];
+        if (isotope && isotope.filteredItems) {
+            isotope.filteredItems.forEach(function(item) {
+                $(item.element).find('.glightbox').each(function() {
+                    activeTriggers.push(this);
+                });
+            });
+        }
+        if (typeof window.refreshPortfolioLightbox === 'function') {
+            window.refreshPortfolioLightbox(activeTriggers);
+        }
         $('.filtro').removeClass('activo');
         $btn.addClass('activo');
         $grid.removeClass('hash-pending').addClass('hash-ready');
