@@ -440,7 +440,14 @@ function shortcode_portfolio_galeria() {
 
     // ---------- OUTPUT ----------
     ob_start();
-    echo '<div class="grid-portafolio">';
+    // "galeria-grid" (in addition to "grid-portafolio") is what filtros.js
+    // targets for Isotope filtering - it must stay unique to this shortcode's
+    // single top-level grid. [portfolio_dashboard] reuses "grid-portafolio"
+    // on several small sub-grids purely for its card CSS/lightbox scoping;
+    // if Isotope also picked those up it would absolutely-position their
+    // cards (breaking the flex gap and, for still-hidden category views,
+    // stacking every card at the same computed offset).
+    echo '<div class="grid-portafolio galeria-grid">';
 
     // 1. Show manually prioritized posts first (in the given order)
     $priority_query = new WP_Query([

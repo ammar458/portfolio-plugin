@@ -14,7 +14,12 @@
 
     function initPortfolioFilters() {
 
-        $grid = $('.grid-portafolio');
+        // Scoped to .galeria-grid (not the broader .grid-portafolio) so
+        // Isotope only ever manages [portfolio_galeria]'s own grid.
+        // [portfolio_dashboard] reuses .grid-portafolio on several small
+        // sub-grids for card CSS/lightbox scoping; those must stay plain
+        // flex layouts, not Isotope-positioned.
+        $grid = $('.galeria-grid');
         if (!$grid.length) return;
 
         // Remove category buttons that have no matching cards in the rendered
