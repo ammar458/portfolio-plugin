@@ -143,9 +143,9 @@ function shortcode_portfolio_dashboard($atts) {
     <div class="portfolio-dashboard">
 
         <div class="pd-tabs">
-            <span class="pd-tab is-active" data-pd-filter="*">ALL</span>
+            <a href="#all" class="pd-tab is-active" data-pd-filter="*">ALL</a>
             <?php foreach ($terms as $term) : ?>
-                <span class="pd-tab" data-pd-filter="<?php echo esc_attr($term->slug); ?>"><?php echo esc_html($term->name); ?></span>
+                <a href="#<?php echo esc_attr($term->slug); ?>" class="pd-tab" data-pd-filter="<?php echo esc_attr($term->slug); ?>"><?php echo esc_html($term->name); ?></a>
             <?php endforeach; ?>
         </div>
 

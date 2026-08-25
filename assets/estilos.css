@@ -570,6 +570,7 @@ body.glightbox-open {
     font-weight: 800;
     letter-spacing: 0.02em;
     text-transform: uppercase;
+    text-decoration: none;
     white-space: nowrap;
     cursor: pointer;
     user-select: none;
@@ -691,6 +692,11 @@ body.glightbox-open {
 .pd-mini-grid .video-card-copy,
 .pd-mini-grid .video-card-stats {
     display: none;
+}
+
+.pd-strip-grid .video-card-overlay,
+.pd-mini-grid .video-card-overlay {
+    justify-content: center;
 }
 
 .pd-strip-grid .video-card-main-row,
