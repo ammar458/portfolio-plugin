@@ -809,3 +809,45 @@ body.glightbox-open {
         grid-template-columns: 1fr;
     }
 }
+
+@media (max-width: 767px) {
+    /* Tabs become a horizontally scrollable strip instead of wrapping onto
+       several lines - the same "slider" treatment [portfolio_filtros] uses
+       for its own category buttons below this same breakpoint. */
+    .pd-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: 4px;
+        margin-bottom: 18px;
+    }
+
+    .pd-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .pd-tab {
+        flex: 0 0 auto;
+    }
+
+    .pd-grid {
+        gap: 16px;
+    }
+
+    .pd-col {
+        gap: 14px;
+    }
+
+    .pd-card {
+        padding: 12px;
+    }
+
+    .pd-solo-grid {
+        min-height: 200px;
+    }
+
+    .pd-strip-grid .item-portafolio {
+        width: 96px !important;
+    }
+}
