@@ -590,7 +590,7 @@ body.glightbox-open {
     display: grid;
     grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) minmax(0, 1fr);
     gap: 22px;
-    align-items: start;
+    align-items: stretch;
 }
 
 .pd-col {
@@ -598,6 +598,33 @@ body.glightbox-open {
     flex-direction: column;
     gap: 18px;
     min-width: 0;
+}
+
+/* Section "cards" - featured video, more videos, web design, marketing
+   each get their own bordered/shadowed box, so the dashboard reads as
+   distinct sections instead of one continuous block. */
+.pd-card {
+    padding: 16px;
+    border: 1px solid #ececec;
+    border-radius: 14px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    background: #fff;
+    box-sizing: border-box;
+}
+
+/* The featured card and the column it lives in both stretch (via
+   align-items: stretch above + flex: 1 here) to fill the same height as
+   the taller web design / marketing columns, with the featured image
+   itself growing into whatever space that leaves. */
+.pd-col-featured {
+    display: flex;
+    flex-direction: column;
+}
+
+.pd-featured-wrap {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
 }
 
 .pd-section-head {
@@ -656,15 +683,28 @@ body.glightbox-open {
 
 .pd-solo-grid {
     margin: 0;
+    flex: 1;
+    display: flex;
+    min-height: 220px;
 }
 
 .pd-solo-grid .item-portafolio {
     width: 100%;
     padding: 0;
+    flex: 1;
+}
+
+.pd-solo-grid .item-portafolio a {
+    height: 100%;
 }
 
 .pd-solo-grid .item-portafolio img {
-    aspect-ratio: 4 / 3;
+    /* No fixed aspect-ratio here (unlike the strip/mini grids) - this
+       image grows to fill whatever height the featured card ends up with
+       once it stretches to match the taller web design / marketing
+       columns, instead of being capped at a fixed ratio. */
+    height: 100%;
+    aspect-ratio: auto;
 }
 
 /* --- More videos strip: small item-portafolio squares, scrolling row --- */
@@ -698,10 +738,12 @@ body.glightbox-open {
 }
 
 /* At this size the full video-card-overlay (category badge, title,
-   subtitle, stats) has no room and just overlaps into an unreadable mess -
-   show only the play button, centered, like a plain thumbnail. */
+   subtitle, stats) has no room and just overlaps into an unreadable mess.
+   The strip keeps a small brand-name label under the play button; the
+   web design / marketing mini-grids drop text entirely (their cards are
+   mostly non-video screenshots anyway). */
 .pd-strip-grid .video-card-category,
-.pd-strip-grid .video-card-copy,
+.pd-strip-grid .video-card-subtitle,
 .pd-strip-grid .video-card-stats,
 .pd-mini-grid .video-card-category,
 .pd-mini-grid .video-card-copy,
@@ -720,8 +762,26 @@ body.glightbox-open {
 }
 
 .pd-strip-grid .video-card-overlay {
-    padding: 0;
+    padding: 6px;
     background: rgba(0, 0, 0, 0.18);
+}
+
+.pd-strip-grid .video-card-main-row {
+    /* Play button first, brand name below it - reversed because the
+       markup order is title-then-button (for the full-size card layout). */
+    flex-direction: column-reverse;
+    gap: 6px;
+}
+
+.pd-strip-grid .video-card-title {
+    margin: 0;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    line-height: 1.15;
+    text-align: center;
+    text-shadow: none;
 }
 
 .pd-strip-grid .portfolio-play-btn {
@@ -733,6 +793,13 @@ body.glightbox-open {
 .pd-strip-grid .item-portafolio.is-video a:hover .portfolio-play-btn {
     width: 30px !important;
     height: 30px !important;
+}
+
+/* --- All dashboard thumbnails: rounded corners --- */
+
+.portfolio-dashboard .item-portafolio a,
+.portfolio-dashboard .item-portafolio img {
+    border-radius: 4px;
 }
 
 /* --- Responsive --- */

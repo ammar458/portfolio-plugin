@@ -163,7 +163,7 @@ function shortcode_portfolio_dashboard($atts) {
 
                 <div class="pd-col pd-col-featured">
 
-                    <div class="pd-featured-wrap">
+                    <div class="pd-featured-wrap pd-card">
                         <span class="pd-featured-badge">Featured <?php echo $featured_is_video ? 'Video' : 'Project'; ?></span>
                         <div class="grid-portafolio pd-solo-grid">
                             <?php echo portfolio_render_item_card($featured_id, 'dashboard'); ?>
@@ -171,7 +171,7 @@ function shortcode_portfolio_dashboard($atts) {
                     </div>
 
                     <?php if ($more_video_ids) : ?>
-                        <div class="pd-more-videos">
+                        <div class="pd-more-videos pd-card">
                             <div class="pd-section-head">
                                 <h4>More Videos</h4>
                                 <?php if ($video_view_all) : ?>
@@ -187,7 +187,7 @@ function shortcode_portfolio_dashboard($atts) {
                     <?php endif; ?>
                 </div>
 
-                <div class="pd-col pd-col-web">
+                <div class="pd-col pd-col-web pd-card">
                     <div class="pd-section-head">
                         <h4>Web Design Projects</h4>
                         <?php if ($web_view_all) : ?>
@@ -201,7 +201,7 @@ function shortcode_portfolio_dashboard($atts) {
                     </div>
                 </div>
 
-                <div class="pd-col pd-col-marketing">
+                <div class="pd-col pd-col-marketing pd-card">
                     <div class="pd-section-head">
                         <h4>Marketing &amp; Social Campaigns</h4>
                         <?php if ($marketing_view_all) : ?>
