@@ -654,9 +654,9 @@ body.glightbox-open {
 /* --- More videos strip: small item-portafolio squares, scrolling row --- */
 
 .pd-strip-grid {
-    margin: 0;
+    margin: 0 !important;
     flex-wrap: nowrap !important;
-    gap: 10px;
+    gap: 14px !important;
     overflow-x: auto;
     padding-bottom: 4px;
 }
@@ -664,19 +664,21 @@ body.glightbox-open {
 .pd-strip-grid .item-portafolio {
     width: 110px !important;
     flex: 0 0 auto !important;
-    padding: 0;
+    padding: 0 !important;
 }
 
 /* --- Web design / marketing columns: a small grid of item-portafolio squares --- */
 
 .pd-mini-grid {
-    margin: 0;
-    gap: 10px;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    margin: 0 !important;
+    gap: 14px !important;
 }
 
 .pd-mini-grid .item-portafolio {
-    width: calc(50% - 5px);
-    padding: 0;
+    width: calc(50% - 7px) !important;
+    padding: 0 !important;
 }
 
 /* At this size the full video-card-overlay (category badge, title,

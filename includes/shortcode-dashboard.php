@@ -24,25 +24,50 @@ if (!defined('ABSPATH')) {
  *                    Campaigns" column. Defaults to the second visible term.
  *   featured_id      Force a specific portfolio post ID as the featured hero
  *                    item instead of auto-picking the most recent video.
- *   web_count        Max items in the web design column. Default 3.
+ *   web_count        Max items in the web design column. Default 6.
  *   marketing_count  Max items in the marketing/social column. Default 6.
- *   video_count      Max thumbnails in the "More Videos" strip. Default 5.
+ *   video_count      Max thumbnails in the "More Videos" strip. Default 4.
  */
+
+/**
+ * Finds the visible term whose name/slug matches a keyword (e.g. "web" for
+ * the "Web Design Projects" column) so that column's items and the
+ * same-named category tab point at the same real taxonomy term. Falls back
+ * to $fallback_index so the column still has *something* to show if no
+ * term happens to match the keyword.
+ */
+function portfolio_dashboard_guess_term($terms, $keyword, $fallback_index, $exclude_slug = '') {
+    foreach ($terms as $term) {
+        if ($term->slug === $exclude_slug) {
+            continue;
+        }
+        if (stripos($term->name, $keyword) !== false || stripos($term->slug, $keyword) !== false) {
+            return $term->slug;
+        }
+    }
+    return isset($terms[$fallback_index]) ? $terms[$fallback_index]->slug : '';
+}
+
 function shortcode_portfolio_dashboard($atts) {
 
     $atts = shortcode_atts([
         'web_term'        => '',
         'marketing_term'  => '',
         'featured_id'     => 0,
-        'web_count'       => 3,
+        'web_count'       => 6,
         'marketing_count' => 6,
-        'video_count'     => 5,
+        'video_count'     => 4,
     ], $atts, 'portfolio_dashboard');
 
     $terms = portfolio_visible_terms();
 
-    $web_term_slug       = $atts['web_term'] ?: (isset($terms[0]) ? $terms[0]->slug : '');
-    $marketing_term_slug = $atts['marketing_term'] ?: (isset($terms[1]) ? $terms[1]->slug : $web_term_slug);
+    // Match the "Web Design Projects" / "Marketing & Social Campaigns"
+    // columns to the real taxonomy term of the same name, rather than just
+    // grabbing the 1st/2nd visible term - otherwise a column can show items
+    // from a different category than the same-named tab, so clicking that
+    // tab shows a confusingly smaller/different set than the column implied.
+    $web_term_slug       = $atts['web_term'] ?: portfolio_dashboard_guess_term($terms, 'web', 0);
+    $marketing_term_slug = $atts['marketing_term'] ?: portfolio_dashboard_guess_term($terms, 'marketing', 1, $web_term_slug);
 
     // ---------- GATHER + CLASSIFY ITEMS ----------
     $posts_query = new WP_Query([
