@@ -2,7 +2,7 @@
 /*
 Plugin Name: Custom Portfolio
 Description: Plugin to manage and display a portfolio with filters and lightbox.
-Version: 1.34
+Version: 1.35
 Author: Ricardo Frassati
 GitHub Plugin URI: ammar458/portfolio-plugin
 */
@@ -28,6 +28,7 @@ function portfolio_plugin_assets() {
     wp_enqueue_script('portfolio-glightbox-js', $plugin_url . 'assets/glightbox.min.js', [], '3.2.0', true);
     wp_enqueue_script('portfolio-glightbox-init', $plugin_url . 'assets/glightbox-init.js', ['portfolio-glightbox-js'], filemtime($plugin_path . 'assets/glightbox-init.js'), true);
     wp_enqueue_script('portfolio-filters-scroll', $plugin_url . 'assets/filtros-scroll.js', ['jquery'], filemtime($plugin_path . 'assets/filtros-scroll.js'), true);
+    wp_enqueue_script('portfolio-dashboard-tabs', $plugin_url . 'assets/dashboard-tabs.js', ['portfolio-glightbox-init'], filemtime($plugin_path . 'assets/dashboard-tabs.js'), true);
 
     // Isotope loaded inline so WP Rocket cannot delay or 404 it
     wp_enqueue_script('isotope-js', 'https://unpkg.com/isotope-layout@3/dist/isotope.pkgd.min.js', ['jquery'], '3.0.6', true);

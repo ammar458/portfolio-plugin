@@ -326,6 +326,106 @@ function portfolio_prepare_media($post_id) {
 }
 
 
+/**
+ * Renders one portfolio item as an `.item-portafolio` card: image (or
+ * poster frame), and for videos the dark `video-card-overlay` (category
+ * badge, title/subtitle, play button, stats). Shared by every shortcode
+ * that renders portfolio items in this card style, so [portfolio_galeria]
+ * and [portfolio_dashboard] stay visually identical.
+ *
+ * $gallery_name sets the glightbox `data-gallery` group, so different
+ * shortcodes on the same page don't mix their lightbox slides together.
+ */
+function portfolio_render_item_card($post_id, $gallery_name = 'galeria') {
+
+    $media = portfolio_prepare_media($post_id);
+    if (!$media) return '';
+
+    $img_main                 = $media['img_main'];
+    $href                     = $media['href'];
+    $data_type                = $media['data_type'];
+    $video_card_category      = $media['video_card_category'];
+    $video_card_title         = $media['video_card_title'];
+    $video_card_subtitle      = $media['video_card_subtitle'];
+    $video_card_views         = $media['video_card_views'];
+    $video_card_lead_increase = $media['video_card_lead_increase'];
+    $video_accessible_title   = $media['video_accessible_title'];
+    $has_video_card_copy      = $media['has_video_card_copy'];
+    $has_video_card_stats     = $media['has_video_card_stats'];
+
+    $item_classes = trim('item-portafolio ' . $media['term_classes'] . ($data_type === 'video' ? ' is-video' : ''));
+
+    ob_start(); ?>
+    <div class="<?php echo esc_attr($item_classes); ?>">
+        <a href="<?php echo esc_url($href); ?>"
+           class="glightbox"
+           data-gallery="<?php echo esc_attr($gallery_name); ?>"
+           aria-label="<?php echo esc_attr($data_type === 'video' ? 'Play ' . $video_accessible_title . ' video' : 'Open ' . get_the_title($post_id)); ?>"
+           <?php echo ($data_type === 'video' ? 'data-type="video"' : ''); ?>>
+            <img src="<?php echo esc_url($img_main); ?>"
+                 alt="<?php echo esc_attr(get_the_title($post_id)); ?>"
+                 loading="lazy">
+
+            <?php if ($data_type === 'video') : ?>
+                <div class="video-card-overlay" aria-hidden="true">
+
+                    <div class="video-card-body">
+                        <?php if ($video_card_category !== '') : ?>
+                            <span class="video-card-category"><?php echo esc_html($video_card_category); ?></span>
+                        <?php endif; ?>
+
+                        <div class="video-card-main-row<?php echo $has_video_card_copy ? '' : ' play-only'; ?>">
+                            <?php if ($has_video_card_copy) : ?>
+                                <div class="video-card-copy">
+                                    <?php if ($video_card_title !== '') : ?>
+                                        <h3 class="video-card-title"><?php echo esc_html($video_card_title); ?></h3>
+                                    <?php endif; ?>
+
+                                    <?php if ($video_card_subtitle !== '') : ?>
+                                        <p class="video-card-subtitle"><?php echo esc_html($video_card_subtitle); ?></p>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endif; ?>
+
+                            <span class="portfolio-play-btn">
+                                <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" focusable="false">
+                                    <circle cx="32" cy="32" r="29" fill="none" stroke="#ffffff" stroke-width="2"/>
+                                    <path d="M27 21.5 45 32 27 42.5Z" fill="#ffffff"/>
+                                </svg>
+                            </span>
+                        </div>
+
+                        <?php if ($has_video_card_stats) : ?>
+                            <div class="video-card-stats">
+                                <?php if ($video_card_views !== '') : ?>
+                                    <span class="video-card-stat">
+                                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" focusable="false">
+                                            <path d="M2.2 12s3.6-6 9.8-6 9.8 6 9.8 6-3.6 6-9.8 6-9.8-6-9.8-6Zm9.8 3.6a3.6 3.6 0 1 0 0-7.2 3.6 3.6 0 0 0 0 7.2Z" fill="currentColor"/>
+                                        </svg>
+                                        <span><?php echo esc_html($video_card_views); ?></span>
+                                    </span>
+                                <?php endif; ?>
+
+                                <?php if ($video_card_lead_increase !== '') : ?>
+                                    <span class="video-card-stat">
+                                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" focusable="false">
+                                            <path d="M4 19V11h3v8H4Zm6 0V5h3v14h-3Zm6 0v-6h3v6h-3Z" fill="currentColor"/>
+                                        </svg>
+                                        <span><?php echo esc_html($video_card_lead_increase); ?></span>
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+        </a>
+    </div>
+    <?php
+    return ob_get_clean();
+}
+
+
 // Shortcode: [portfolio_galeria]
 function shortcode_portfolio_galeria() {
 
@@ -337,96 +437,6 @@ function shortcode_portfolio_galeria() {
     // a whole category be taken offline with one checkbox (e.g. while a
     // display bug is being fixed and tested) instead of a separate toggle.
     $tax_query = portfolio_visible_tax_query();
-
-    // ---------- RENDER FUNCTION ----------
-    $render_item = function ($post_id) {
-
-        $media = portfolio_prepare_media($post_id);
-        if (!$media) return '';
-
-        $img_main                 = $media['img_main'];
-        $href                     = $media['href'];
-        $data_type                = $media['data_type'];
-        $video_card_category      = $media['video_card_category'];
-        $video_card_title         = $media['video_card_title'];
-        $video_card_subtitle      = $media['video_card_subtitle'];
-        $video_card_views         = $media['video_card_views'];
-        $video_card_lead_increase = $media['video_card_lead_increase'];
-        $video_accessible_title   = $media['video_accessible_title'];
-        $has_video_card_copy      = $media['has_video_card_copy'];
-        $has_video_card_stats     = $media['has_video_card_stats'];
-
-        $item_classes = trim('item-portafolio ' . $media['term_classes'] . ($data_type === 'video' ? ' is-video' : ''));
-
-        ob_start(); ?>
-        <div class="<?php echo esc_attr($item_classes); ?>">
-            <a href="<?php echo esc_url($href); ?>"
-               class="glightbox"
-               data-gallery="galeria"
-               aria-label="<?php echo esc_attr($data_type === 'video' ? 'Play ' . $video_accessible_title . ' video' : 'Open ' . get_the_title($post_id)); ?>"
-               <?php echo ($data_type === 'video' ? 'data-type="video"' : ''); ?>>
-                <img src="<?php echo esc_url($img_main); ?>"
-                     alt="<?php echo esc_attr(get_the_title($post_id)); ?>"
-                     loading="lazy">
-
-                <?php if ($data_type === 'video') : ?>
-                    <div class="video-card-overlay" aria-hidden="true">
-
-                        <div class="video-card-body">
-                            <?php if ($video_card_category !== '') : ?>
-                                <span class="video-card-category"><?php echo esc_html($video_card_category); ?></span>
-                            <?php endif; ?>
-
-                            <div class="video-card-main-row<?php echo $has_video_card_copy ? '' : ' play-only'; ?>">
-                                <?php if ($has_video_card_copy) : ?>
-                                    <div class="video-card-copy">
-                                        <?php if ($video_card_title !== '') : ?>
-                                            <h3 class="video-card-title"><?php echo esc_html($video_card_title); ?></h3>
-                                        <?php endif; ?>
-
-                                        <?php if ($video_card_subtitle !== '') : ?>
-                                            <p class="video-card-subtitle"><?php echo esc_html($video_card_subtitle); ?></p>
-                                        <?php endif; ?>
-                                    </div>
-                                <?php endif; ?>
-
-                                <span class="portfolio-play-btn">
-                                    <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" focusable="false">
-                                        <circle cx="32" cy="32" r="29" fill="none" stroke="#ffffff" stroke-width="2"/>
-                                        <path d="M27 21.5 45 32 27 42.5Z" fill="#ffffff"/>
-                                    </svg>
-                                </span>
-                            </div>
-
-                            <?php if ($has_video_card_stats) : ?>
-                                <div class="video-card-stats">
-                                    <?php if ($video_card_views !== '') : ?>
-                                        <span class="video-card-stat">
-                                            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" focusable="false">
-                                                <path d="M2.2 12s3.6-6 9.8-6 9.8 6 9.8 6-3.6 6-9.8 6-9.8-6-9.8-6Zm9.8 3.6a3.6 3.6 0 1 0 0-7.2 3.6 3.6 0 0 0 0 7.2Z" fill="currentColor"/>
-                                            </svg>
-                                            <span><?php echo esc_html($video_card_views); ?></span>
-                                        </span>
-                                    <?php endif; ?>
-
-                                    <?php if ($video_card_lead_increase !== '') : ?>
-                                        <span class="video-card-stat">
-                                            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" focusable="false">
-                                                <path d="M4 19V11h3v8H4Zm6 0V5h3v14h-3Zm6 0v-6h3v6h-3Z" fill="currentColor"/>
-                                            </svg>
-                                            <span><?php echo esc_html($video_card_lead_increase); ?></span>
-                                        </span>
-                                    <?php endif; ?>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                <?php endif; ?>
-            </a>
-        </div>
-        <?php
-        return ob_get_clean();
-    };
 
     // ---------- OUTPUT ----------
     ob_start();
@@ -447,7 +457,7 @@ function shortcode_portfolio_galeria() {
         while ($priority_query->have_posts()) {
             $priority_query->the_post();
             $shown_ids[] = get_the_ID();
-            echo $render_item(get_the_ID());
+            echo portfolio_render_item_card(get_the_ID(), 'galeria');
         }
         wp_reset_postdata();
     }
@@ -465,7 +475,7 @@ function shortcode_portfolio_galeria() {
     if ($rest_query->have_posts()) {
         while ($rest_query->have_posts()) {
             $rest_query->the_post();
-            echo $render_item(get_the_ID());
+            echo portfolio_render_item_card(get_the_ID(), 'galeria');
         }
         wp_reset_postdata();
     }

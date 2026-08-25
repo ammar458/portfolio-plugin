@@ -540,7 +540,10 @@ body.glightbox-open {
 }
 
 /* ============================================================
-   Portfolio Dashboard [portfolio_dashboard] - light bento overview
+   Portfolio Dashboard [portfolio_dashboard] - bento overview built from
+   the same .item-portafolio / .video-card-overlay cards as
+   [portfolio_galeria]. Only the surrounding layout (sizes, columns) is
+   specific to the dashboard.
    ============================================================ */
 
 .portfolio-dashboard {
@@ -568,12 +571,18 @@ body.glightbox-open {
     letter-spacing: 0.02em;
     text-transform: uppercase;
     white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
 }
 
 .pd-tab.is-active {
     background: #111111;
     color: #fff;
     border-color: #111111;
+}
+
+.pd-view[hidden] {
+    display: none;
 }
 
 .pd-grid {
@@ -606,22 +615,10 @@ body.glightbox-open {
     color: #111111;
 }
 
-/* --- Featured hero card --- */
+/* --- Featured hero: one item-portafolio card, sized up --- */
 
-.pd-featured {
+.pd-featured-wrap {
     position: relative;
-    display: block;
-    overflow: hidden;
-    border-radius: 16px;
-    background: #111;
-    aspect-ratio: 4 / 3;
-}
-
-.pd-featured img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
 }
 
 .pd-featured-badge {
@@ -641,317 +638,45 @@ body.glightbox-open {
     text-transform: uppercase;
 }
 
-.pd-featured-overlay {
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-end;
-    text-align: center;
-    padding: 26px;
-    box-sizing: border-box;
-    color: #fff;
-    background: linear-gradient(180deg, rgba(0, 0, 0, 0) 38%, rgba(0, 0, 0, 0.88) 100%);
+.pd-solo-grid {
+    margin: 0;
 }
 
-.pd-featured-play {
-    width: 60px;
-    height: 60px;
-    margin-bottom: 14px;
-    opacity: 0.95;
-}
-
-.pd-featured-play svg {
+.pd-solo-grid .item-portafolio {
     width: 100%;
-    height: 100%;
-    display: block;
+    padding: 0;
 }
 
-.pd-featured-title {
-    margin: 0 0 6px;
-    font-size: clamp(20px, 2.2vw, 30px);
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    line-height: 1.08;
+.pd-solo-grid .item-portafolio img {
+    aspect-ratio: 4 / 3;
 }
 
-.pd-featured-sub {
-    margin: 0 0 10px;
-    max-width: 46ch;
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.85);
-}
+/* --- More videos strip: small item-portafolio squares, scrolling row --- */
 
-.pd-click-play {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    color: rgba(255, 255, 255, 0.85);
-}
-
-/* --- More videos strip --- */
-
-.pd-video-strip {
-    display: flex;
-    gap: 12px;
+.pd-strip-grid {
+    margin: 0;
+    flex-wrap: nowrap;
+    gap: 10px;
     overflow-x: auto;
     padding-bottom: 4px;
 }
 
-.pd-video-thumb-wrap {
-    flex: 0 0 auto;
+.pd-strip-grid .item-portafolio {
     width: 110px;
+    flex: 0 0 auto;
+    padding: 0;
 }
 
-.pd-video-thumb {
-    position: relative;
-    display: block;
-    overflow: hidden;
-    border-radius: 10px;
-    aspect-ratio: 1 / 1;
-    background: #111;
-}
+/* --- Web design / marketing columns: a small grid of item-portafolio squares --- */
 
-.pd-video-thumb img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-
-.pd-play-mini {
-    position: absolute;
-    inset: 0;
-    margin: auto;
-    width: 28px;
-    height: 28px;
-}
-
-.pd-play-mini svg {
-    width: 100%;
-    height: 100%;
-    display: block;
-    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
-}
-
-.pd-video-thumb-label {
-    display: block;
-    margin-top: 6px;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
-    text-align: center;
-    color: #111111;
-}
-
-/* --- Web design project cards (laptop mockup) --- */
-
-.pd-project-list {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.pd-project-card {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 14px;
-    border: 1px solid #ececec;
-    border-radius: 14px;
-    background: #fbfbfb;
-}
-
-.pd-laptop {
-    flex: 0 0 130px;
-}
-
-.pd-laptop-screen {
-    overflow: hidden;
-    border: 3px solid #1c1c1c;
-    border-radius: 8px 8px 3px 3px;
-    background: #000;
-    aspect-ratio: 16 / 10;
-}
-
-.pd-laptop-screen img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-
-.pd-laptop-base {
-    height: 7px;
-    margin: 0 -6px;
-    border-radius: 0 0 6px 6px;
-    background: linear-gradient(180deg, #3a3a3a, #111111);
-}
-
-.pd-project-body {
-    min-width: 0;
-}
-
-.pd-project-body h5 {
-    margin: 0 0 4px;
-    font-size: 15px;
-    font-weight: 800;
-    color: #111111;
-}
-
-.pd-project-body p {
-    margin: 0 0 10px;
-    font-size: 12.5px;
-    line-height: 1.4;
-    color: #6b6b6b;
-}
-
-.pd-view-btn {
-    display: inline-block;
-    padding: 7px 16px;
-    border: 1px solid #e3121f;
-    border-radius: 999px;
-    color: #e3121f;
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
-    text-decoration: none;
-}
-
-.pd-view-btn:hover {
-    background: #e3121f;
-    color: #fff;
-}
-
-/* --- Marketing & social campaign grid --- */
-
-.pd-campaign-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-}
-
-.pd-campaign-card {
-    position: relative;
-    display: block;
-    overflow: hidden;
-    border-radius: 14px;
-    background: #111;
-    aspect-ratio: 1 / 1;
-}
-
-.pd-campaign-card img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-
-.pd-campaign-card.pd-stat-card {
-    aspect-ratio: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 16px;
-    background: #fff;
-    border: 1px solid #ececec;
-}
-
-.pd-campaign-cat {
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: #6b6b6b;
-}
-
-.pd-campaign-stats {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.pd-campaign-stat {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    font-weight: 700;
-    color: #111111;
-}
-
-.pd-campaign-stat svg {
-    width: 16px;
-    height: 16px;
-    flex: 0 0 16px;
-    color: #e3121f;
-}
-
-.pd-campaign-thumb {
-    display: block;
-    margin-top: auto;
-    overflow: hidden;
-    border-radius: 8px;
-    aspect-ratio: 16 / 9;
-}
-
-.pd-campaign-thumb img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-
-.pd-campaign-overlay {
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    padding: 14px;
-    box-sizing: border-box;
-    color: #fff;
-    background: linear-gradient(180deg, rgba(0, 0, 0, 0) 45%, rgba(0, 0, 0, 0.75) 100%);
-}
-
-.pd-campaign-overlay .cat {
-    align-self: flex-start;
-    margin-bottom: 6px;
-    padding: 4px 9px;
-    border-radius: 999px;
-    background: #e3121f;
-    font-size: 9px;
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-}
-
-.pd-campaign-overlay h6 {
+.pd-mini-grid {
     margin: 0;
-    font-size: 14px;
-    font-weight: 800;
+    gap: 10px;
 }
 
-.pd-campaign-play {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 2;
-    width: 26px;
-    height: 26px;
-    opacity: 0.9;
-    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
-}
-
-.pd-campaign-play svg {
-    width: 100%;
-    height: 100%;
-    display: block;
+.pd-mini-grid .item-portafolio {
+    width: calc(50% - 5px);
+    padding: 0;
 }
 
 /* --- Responsive --- */
@@ -959,19 +684,5 @@ body.glightbox-open {
 @media (max-width: 1024px) {
     .pd-grid {
         grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 600px) {
-    .pd-campaign-grid {
-        grid-template-columns: 1fr 1fr;
-    }
-
-    .pd-featured-title {
-        font-size: 20px;
-    }
-
-    .pd-featured-sub {
-        font-size: 12px;
     }
 }
