@@ -32,6 +32,44 @@ class Portfolio_Plugin_GitHub_Updater {
         add_filter('upgrader_source_selection', [$this, 'fix_source_dir'], 10, 4);
         add_filter('upgrader_post_install', [$this, 'after_install'], 10, 3);
         add_filter('plugin_row_meta', [$this, 'row_meta'], 10, 2);
+        add_action('admin_init', [$this, 'maybe_handle_manual_check']);
+        add_action('admin_notices', [$this, 'maybe_show_manual_check_notice']);
+    }
+
+    /**
+     * Our own release info is cached for $cache_hours regardless of when
+     * core's "Check Again" button on the Updates page last ran - that
+     * button forces core to re-run pre_set_site_transient_update_plugins,
+     * but this class still hands back its stale cached release inside that
+     * filter. This "Check for updates" row-meta link clears our cache
+     * directly so the very next page load re-hits the GitHub API.
+     */
+    public function maybe_handle_manual_check() {
+        if (empty($_GET['ppgh_check_update']) || $_GET['ppgh_check_update'] !== $this->basename) {
+            return;
+        }
+        if (!current_user_can('update_plugins') || !check_admin_referer('ppgh_check_update_' . $this->basename)) {
+            return;
+        }
+
+        delete_transient($this->cache_key);
+        $this->get_latest_release();
+
+        wp_safe_redirect(add_query_arg('ppgh_checked', $this->basename, remove_query_arg(['ppgh_check_update', '_wpnonce'])));
+        exit;
+    }
+
+    public function maybe_show_manual_check_notice() {
+        if (empty($_GET['ppgh_checked']) || $_GET['ppgh_checked'] !== $this->basename) {
+            return;
+        }
+
+        $release = $this->get_latest_release();
+        $message = !empty($release['version'])
+            ? sprintf(esc_html__('Custom Portfolio: checked GitHub for updates. Latest release is v%s.'), esc_html($release['version']))
+            : esc_html__('Custom Portfolio: checked GitHub for updates, but no release info was found.');
+
+        echo '<div class="notice notice-info is-dismissible"><p>' . $message . '</p></div>';
     }
 
     private function get_plugin_data() {
@@ -197,6 +235,12 @@ class Portfolio_Plugin_GitHub_Updater {
 
     public function row_meta($links, $file) {
         if ($file === $this->basename) {
+            $check_url = wp_nonce_url(
+                add_query_arg('ppgh_check_update', $this->basename, admin_url('plugins.php')),
+                'ppgh_check_update_' . $this->basename
+            );
+            $links[] = '<a href="' . esc_url($check_url) . '">' . esc_html__('Check for updates') . '</a>';
+
             $release = $this->get_latest_release();
             if (!empty($release['html_url'])) {
                 $links[] = '<a href="' . esc_url($release['html_url']) . '" target="_blank">' . esc_html__('View changelog') . '</a>';
