@@ -616,6 +616,21 @@ body.glightbox-open {
     color: #111111;
 }
 
+.pd-see-all {
+    flex: 0 0 auto;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: #e3121f;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.pd-see-all:hover {
+    text-decoration: underline;
+}
+
 /* --- Featured hero: one item-portafolio card, sized up --- */
 
 .pd-featured-wrap {

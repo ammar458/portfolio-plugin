@@ -125,6 +125,15 @@ function shortcode_portfolio_dashboard($atts) {
         return !empty($ids_by_term[$term->slug]);
     }));
 
+    $rendered_slugs = wp_list_pluck($terms, 'slug');
+
+    // "View All" links next to each section heading only make sense if
+    // there's an actual tab for them to jump to.
+    $video_term_slug = portfolio_dashboard_guess_term($terms, 'video', -1, $web_term_slug);
+    $web_view_all       = in_array($web_term_slug, $rendered_slugs, true) ? $web_term_slug : '';
+    $marketing_view_all = in_array($marketing_term_slug, $rendered_slugs, true) ? $marketing_term_slug : '';
+    $video_view_all     = in_array($video_term_slug, $rendered_slugs, true) ? $video_term_slug : '';
+
     // ---------- PICK THE FEATURED ITEM ----------
     $featured_id = (int) $atts['featured_id'];
     if (!$featured_id || !isset($media_by_id[$featured_id])) {
@@ -165,6 +174,9 @@ function shortcode_portfolio_dashboard($atts) {
                         <div class="pd-more-videos">
                             <div class="pd-section-head">
                                 <h4>More Videos</h4>
+                                <?php if ($video_view_all) : ?>
+                                    <a href="#<?php echo esc_attr($video_view_all); ?>" class="pd-see-all">View All</a>
+                                <?php endif; ?>
                             </div>
                             <div class="grid-portafolio pd-strip-grid">
                                 <?php foreach ($more_video_ids as $id) : ?>
@@ -178,6 +190,9 @@ function shortcode_portfolio_dashboard($atts) {
                 <div class="pd-col pd-col-web">
                     <div class="pd-section-head">
                         <h4>Web Design Projects</h4>
+                        <?php if ($web_view_all) : ?>
+                            <a href="#<?php echo esc_attr($web_view_all); ?>" class="pd-see-all">View All</a>
+                        <?php endif; ?>
                     </div>
                     <div class="grid-portafolio pd-mini-grid">
                         <?php foreach ($web_ids as $id) : ?>
@@ -189,6 +204,9 @@ function shortcode_portfolio_dashboard($atts) {
                 <div class="pd-col pd-col-marketing">
                     <div class="pd-section-head">
                         <h4>Marketing &amp; Social Campaigns</h4>
+                        <?php if ($marketing_view_all) : ?>
+                            <a href="#<?php echo esc_attr($marketing_view_all); ?>" class="pd-see-all">View All</a>
+                        <?php endif; ?>
                     </div>
                     <div class="grid-portafolio pd-mini-grid">
                         <?php foreach ($marketing_ids as $id) : ?>
