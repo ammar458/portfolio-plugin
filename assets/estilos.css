@@ -655,15 +655,15 @@ body.glightbox-open {
 
 .pd-strip-grid {
     margin: 0;
-    flex-wrap: nowrap;
+    flex-wrap: nowrap !important;
     gap: 10px;
     overflow-x: auto;
     padding-bottom: 4px;
 }
 
 .pd-strip-grid .item-portafolio {
-    width: 110px;
-    flex: 0 0 auto;
+    width: 110px !important;
+    flex: 0 0 auto !important;
     padding: 0;
 }
 
@@ -677,6 +677,39 @@ body.glightbox-open {
 .pd-mini-grid .item-portafolio {
     width: calc(50% - 5px);
     padding: 0;
+}
+
+/* At this size the full video-card-overlay (category badge, title,
+   subtitle, stats) has no room and just overlaps into an unreadable mess -
+   show only the play button, centered, like a plain thumbnail. */
+.pd-strip-grid .video-card-category,
+.pd-strip-grid .video-card-copy,
+.pd-strip-grid .video-card-stats,
+.pd-mini-grid .video-card-category,
+.pd-mini-grid .video-card-copy,
+.pd-mini-grid .video-card-stats {
+    display: none;
+}
+
+.pd-strip-grid .video-card-main-row,
+.pd-mini-grid .video-card-main-row {
+    justify-content: center;
+}
+
+.pd-strip-grid .video-card-overlay {
+    padding: 0;
+    background: rgba(0, 0, 0, 0.18);
+}
+
+.pd-strip-grid .portfolio-play-btn {
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px;
+}
+
+.pd-strip-grid .item-portafolio.is-video a:hover .portfolio-play-btn {
+    width: 30px !important;
+    height: 30px !important;
 }
 
 /* --- Responsive --- */
