@@ -63,7 +63,7 @@ function shortcode_portfolio_filtros() {
 
                 <?php foreach ($terms as $term): ?>
                     <a href="#<?= esc_attr($term->slug) ?>" class="filtro style-btn" data-filtro=".<?= esc_attr($term->slug) ?>">
-                        <?= esc_html($term->name) ?>
+                        <?= esc_html(html_entity_decode($term->name, ENT_QUOTES, 'UTF-8')) ?>
                     </a>
                 <?php endforeach; ?>
 
